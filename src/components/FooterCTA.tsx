@@ -6,7 +6,7 @@ const FooterCTA = () => {
     <section className="py-32 bg-background">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl md:text-6xl font-light text-architectural mb-12">
-          [FOOTER CTA HEADLINE]
+          You have the expertise. We build the machine.
         </h2>
         <Button asChild size="lg" className="mb-8">
           <Link to="/contact">Talk to Us</Link>
