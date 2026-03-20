@@ -1,34 +1,60 @@
-import heroImage from "@/assets/hero-architecture.jpg";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
+
+const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; size: number }) => (
+  <div
+    className="absolute rounded-full bg-white/20"
+    style={{
+      width: size,
+      height: size,
+      left: `${x}%`,
+      top: `${y}%`,
+      animation: `float ${8 + delay * 2}s ease-in-out ${delay}s infinite alternate`,
+    }}
+  />
+);
 
 const Hero = () => {
+  const particles = useRef(
+    Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      x: 50 + Math.random() * 48,
+      y: 10 + Math.random() * 80,
+      size: 1 + Math.random() * 2,
+      delay: Math.random() * 5,
+    }))
+  ).current;
+
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      />
-      
-      {/* Overlay */}
-      <div className="absolute inset-0 hero-overlay" />
-      
-      {/* Content */}
-      <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
-        <h1 className="text-6xl md:text-8xl lg:text-9xl font-light text-white text-architectural mb-8 reveal">
-          MINIMAL
-          <br />
-          ARCHITECTURE
-        </h1>
-        <p className="text-xl md:text-2xl text-white/80 font-light tracking-wide max-w-2xl mx-auto reveal-delayed">
-          Creating spaces that inspire through thoughtful design and uncompromising quality
-        </p>
-      </div>
-      
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 reveal-delayed">
-        <div className="w-px h-16 bg-white/40" />
-        <div className="text-minimal text-white/60 mt-4 rotate-90 origin-center">
-          SCROLL
+    <section className="relative h-screen flex items-center overflow-hidden bg-black">
+      {/* Floating particles */}
+      {particles.map((p) => (
+        <Particle key={p.id} delay={p.delay} x={p.x} y={p.y} size={p.size} />
+      ))}
+
+      {/* Subtle moving line accents */}
+      <div className="absolute right-[20%] top-[15%] w-px h-24 bg-gradient-to-b from-transparent via-white/10 to-transparent animate-drift-slow" />
+      <div className="absolute right-[35%] bottom-[20%] w-px h-16 bg-gradient-to-b from-transparent via-white/[0.07] to-transparent animate-drift-slow-reverse" />
+      <div className="absolute right-[60%] top-[60%] w-12 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent animate-drift-horizontal" />
+
+      {/* Content — left aligned */}
+      <div className="relative z-10 container mx-auto px-6">
+        <div className="max-w-2xl">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-light text-white text-architectural mb-6 reveal">
+            [HEADLINE — copywriting pending]
+          </h1>
+          <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 reveal-delayed max-w-lg">
+            [SUBHEAD — copywriting pending]
+          </p>
+          <div className="reveal-delayed">
+            <Button asChild size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white mb-6">
+              <Link to="/contact">Talk to Us</Link>
+            </Button>
+            <p className="text-xs text-white/30 tracking-wide">
+              AI infrastructure by SevenTrain Ventures
+            </p>
+          </div>
         </div>
       </div>
     </section>
