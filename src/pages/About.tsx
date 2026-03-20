@@ -1,70 +1,74 @@
 import Navigation from "@/components/Navigation";
+import FooterCTA from "@/components/FooterCTA";
 
 const About = () => {
+  const team = [
+    { name: "[NAME]", role: "[ROLE]" },
+    { name: "[NAME]", role: "[ROLE]" },
+    { name: "[NAME]", role: "[ROLE]" },
+    { name: "[NAME]", role: "[ROLE]" },
+  ];
+
   return (
     <div className="min-h-screen">
       <Navigation />
-      <section className="pt-32 pb-32 bg-background">
-        <div className="container mx-auto px-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-20 items-center">
-              <div>
-                <h1 className="text-minimal text-muted-foreground mb-4">ABOUT</h1>
-                <h2 className="text-4xl md:text-6xl font-light text-architectural mb-12">
-                  Design Philosophy
-                </h2>
-                
-                <div className="space-y-8">
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    We believe architecture should enhance human experience while respecting 
-                    the natural environment. Our practice focuses on creating spaces that 
-                    are both functional and poetic.
-                  </p>
-                  
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    Founded in 2015, our studio has completed over 200 projects across 
-                    residential, commercial, and cultural sectors. Each project begins 
-                    with careful listening and ends with thoughtful execution.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-12">
-                <div>
-                  <h3 className="text-minimal text-muted-foreground mb-6">APPROACH</h3>
-                  <div className="space-y-6">
-                    <div className="border-l-2 border-architectural pl-6">
-                      <h4 className="text-lg font-medium mb-2">Research</h4>
-                      <p className="text-muted-foreground">Deep understanding of context, culture, and climate</p>
-                    </div>
-                    <div className="border-l-2 border-architectural pl-6">
-                      <h4 className="text-lg font-medium mb-2">Collaboration</h4>
-                      <p className="text-muted-foreground">Close partnership with clients, engineers, and craftspeople</p>
-                    </div>
-                    <div className="border-l-2 border-architectural pl-6">
-                      <h4 className="text-lg font-medium mb-2">Innovation</h4>
-                      <p className="text-muted-foreground">Sustainable materials and forward-thinking design solutions</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="pt-8 border-t border-border">
-                  <div className="grid grid-cols-2 gap-8">
-                    <div>
-                      <h3 className="text-minimal text-muted-foreground mb-2">FOUNDED</h3>
-                      <p className="text-xl">2015</p>
-                    </div>
-                    <div>
-                      <h3 className="text-minimal text-muted-foreground mb-2">PROJECTS</h3>
-                      <p className="text-xl">200+</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+
+      {/* Section A — Who We Are */}
+      <section className="pt-32 pb-20 bg-background">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <h1 className="text-4xl md:text-6xl font-light text-architectural mb-8">[ABOUT TITLE]</h1>
+          <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl">
+            [ABOUT BODY — 3-4 sentences]
+          </p>
+        </div>
+      </section>
+
+      {/* Section B — The Lineage */}
+      <section className="py-32 bg-muted">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="grid md:grid-cols-2 gap-20">
+            <div>
+              <h2 className="text-minimal text-muted-foreground mb-6">THE LINEAGE</h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                [LINEAGE PARAGRAPH — 4-5 sentences]
+              </p>
+            </div>
+            <div>
+              <ul className="space-y-4">
+                {[
+                  "SevenTrain Ventures",
+                  "Bloomberg LP",
+                  "JPMorgan",
+                  "World Economic Forum",
+                  "ESADE Business School",
+                  "40+ Venture Investments",
+                ].map((name) => (
+                  <li key={name} className="text-foreground text-lg border-b border-border pb-4">
+                    {name}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Section C — The Team */}
+      <section className="py-32 bg-background">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <h2 className="text-minimal text-muted-foreground mb-12">THE TEAM</h2>
+          <div className="grid md:grid-cols-2 gap-12">
+            {team.map((person, i) => (
+              <div key={i} className="border-t border-border pt-6">
+                <p className="text-xl font-light text-architectural mb-1">{person.name}</p>
+                <p className="text-muted-foreground">{person.role}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <FooterCTA />
     </div>
   );
 };
