@@ -1,158 +1,93 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef, useMemo } from "react";
+import { motion } from "framer-motion";
+import { useMemo } from "react";
 
-interface Pixel {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  speed: number;
-  opacity: number;
+interface Dot {
+  col: number;
+  row: number;
+  blinkSeed: number[];
+  blinkDuration: number;
+  blinkDelay: number;
 }
 
-interface FloatingPixel {
-  id: number;
-  x: number;
-  y: number;
-  size: number;
-  duration: number;
-  delay: number;
-  driftX: number;
-  driftY: number;
-}
+const DOT_SIZE = 6;
+const GAP = 2;
+const STEP = DOT_SIZE + GAP;
 
 const ParallaxPixels = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
+  const dots = useMemo<Dot[]>(() => {
+    const arr: Dot[] = [];
+    const cols = Math.ceil(2000 / STEP);
 
-  // Wave-shaped cluster of circles at the transition boundary
-  const wavePixels = useMemo<Pixel[]>(() => {
-    const arr: Pixel[] = [];
-    const count = 500;
-    for (let i = 0; i < count; i++) {
-      const x = (i / count) * 100;
-      // Multi-wave baseline using sine waves
-      const wave1 = Math.sin((x / 100) * Math.PI * 3) * 12;
-      const wave2 = Math.sin((x / 100) * Math.PI * 5 + 1) * 6;
-      const wave3 = Math.sin((x / 100) * Math.PI * 8 + 2) * 3;
-      const waveY = 50 + wave1 + wave2 + wave3;
+    for (let c = 0; c < cols; c++) {
+      const t = c / cols;
+      // Multi-frequency wave for organic jagged top edge
+      const h1 = Math.sin(t * Math.PI * 6) * 5;
+      const h2 = Math.sin(t * Math.PI * 14 + 1.3) * 2.5;
+      const h3 = Math.sin(t * Math.PI * 22 + 0.7) * 1.5;
+      const h4 = Math.cos(t * Math.PI * 10 + 2.1) * 3;
+      const h5 = Math.sin(t * Math.PI * 30 + 3.0) * 1;
+      const height = Math.max(2, Math.round(10 + h1 + h2 + h3 + h4 + h5));
 
-      // Scatter circles around the wave line with more density near center
-      const scatter = (Math.random() - 0.5) * 35;
-      const distFromWave = Math.abs(scatter);
-      const y = waveY + scatter;
-
-      // Circles closer to wave center are bigger and more opaque
-      const size = distFromWave < 5
-        ? 3 + Math.random() * 4
-        : distFromWave < 12
-          ? 2 + Math.random() * 3
-          : 1 + Math.random() * 2;
-
-      const opacity = distFromWave < 5
-        ? 0.7 + Math.random() * 0.3
-        : distFromWave < 12
-          ? 0.4 + Math.random() * 0.4
-          : 0.15 + Math.random() * 0.3;
-
-      arr.push({
-        id: i,
-        x: x + (Math.random() - 0.5) * 2,
-        y,
-        size,
-        speed: 0.3 + Math.random() * 1.0 + (distFromWave < 8 ? 0.3 : 0),
-        opacity,
-      });
-    }
-    return arr;
-  }, []);
-
-  // Ambient floating pixels that drift around the hero area
-  const floaters = useMemo<FloatingPixel[]>(() => {
-    const arr: FloatingPixel[] = [];
-    for (let i = 0; i < 30; i++) {
-      arr.push({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: 1 + Math.random() * 3,
-        duration: 4 + Math.random() * 8,
-        delay: Math.random() * 5,
-        driftX: (Math.random() - 0.5) * 60,
-        driftY: (Math.random() - 0.5) * 40,
-      });
+      for (let r = 0; r < height; r++) {
+        // Pre-generate random blink keyframes (never go below 0.25)
+        const s1 = 0.3 + Math.random() * 0.7;
+        const s2 = 0.5 + Math.random() * 0.5;
+        const s3 = 0.25 + Math.random() * 0.5;
+        const s4 = 0.6 + Math.random() * 0.4;
+        const s5 = 0.35 + Math.random() * 0.6;
+        arr.push({
+          col: c,
+          row: r,
+          blinkSeed: [s1, s2, s3, s4, s5],
+          blinkDuration: 2 + Math.random() * 4,
+          blinkDelay: Math.random() * 5,
+        });
+      }
     }
     return arr;
   }, []);
 
   return (
     <div
-      ref={ref}
-      className="absolute inset-0 overflow-hidden pointer-events-none"
-      style={{ zIndex: 15 }}
+      className="absolute top-0 left-0 right-0 overflow-hidden pointer-events-none"
+      style={{ zIndex: 5, transform: "translateY(-100%)" }}
     >
-      {/* Wave cluster circles */}
-      {wavePixels.map((p) => (
-        <WaveDot key={p.id} pixel={p} scrollYProgress={scrollYProgress} />
-      ))}
-      {/* Ambient floating glowing pixels */}
-      {floaters.map((f) => (
-        <FloatingDot key={`f-${f.id}`} pixel={f} />
-      ))}
+      {/* Grid grows upward from the section boundary */}
+      <div className="relative w-full" style={{ height: 22 * STEP }}>
+        {dots.map((d, i) => (
+          <BlinkDot key={i} dot={d} />
+        ))}
+      </div>
     </div>
   );
 };
 
-const WaveDot = ({
-  pixel,
-  scrollYProgress,
-}: {
-  pixel: Pixel;
-  scrollYProgress: ReturnType<typeof useScroll>["scrollYProgress"];
-}) => {
-  const y = useTransform(scrollYProgress, [0, 1], [0, -pixel.speed * 280]);
+const BlinkDot = ({ dot }: { dot: Dot }) => {
+  const left = dot.col * STEP;
+  // row 0 = closest to the white section (bottom), higher rows go up into the black
+  const bottom = dot.row * STEP;
 
   return (
     <motion.div
-      className="absolute rounded-full bg-white"
+      className="absolute rounded-full bg-background"
       style={{
-        width: pixel.size,
-        height: pixel.size,
-        left: `${pixel.x}%`,
-        top: `${pixel.y}%`,
-        opacity: pixel.opacity,
-        y,
-        willChange: "transform",
+        width: DOT_SIZE,
+        height: DOT_SIZE,
+        left,
+        bottom,
+        willChange: "opacity",
+      }}
+      animate={{
+        opacity: dot.blinkSeed,
+      }}
+      transition={{
+        duration: dot.blinkDuration,
+        delay: dot.blinkDelay,
+        repeat: Infinity,
+        ease: "easeInOut",
       }}
     />
   );
 };
-
-const FloatingDot = ({ pixel }: { pixel: FloatingPixel }) => (
-  <motion.div
-    className="absolute rounded-full bg-white"
-    style={{
-      width: pixel.size,
-      height: pixel.size,
-      left: `${pixel.x}%`,
-      top: `${pixel.y}%`,
-    }}
-    animate={{
-      x: [0, pixel.driftX, -pixel.driftX * 0.5, 0],
-      y: [0, pixel.driftY, -pixel.driftY * 0.6, 0],
-      opacity: [0.05, 0.5, 0.15, 0.4, 0.05],
-      scale: [1, 1.4, 0.8, 1],
-    }}
-    transition={{
-      duration: pixel.duration,
-      delay: pixel.delay,
-      repeat: Infinity,
-      ease: "easeInOut",
-    }}
-  />
-);
 
 export default ParallaxPixels;
