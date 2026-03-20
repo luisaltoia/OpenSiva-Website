@@ -63,7 +63,7 @@ const Index = () => {
       <Navigation />
 
       {/* ═══ HERO — Stays sticky while Section B scrolls over it ═══ */}
-      <div ref={heroWrapRef} className="relative h-[300vh]">
+      <div ref={heroWrapRef} className="relative h-[200vh]">
         <div className="sticky top-0 h-screen z-10 overflow-hidden">
           <motion.div
             className="h-full"
@@ -100,7 +100,7 @@ const Index = () => {
                     opacity: useTransform(cardProgresses[i], [0, 0.6], [0, 1]),
                   }}
                 >
-                  <p className="text-minimal text-muted-foreground mb-4">{block.label}</p>
+                  <span className="inline-block bg-foreground text-background text-[10px] tracking-widest uppercase font-medium px-4 py-1.5 rounded-full mb-4">{block.label}</span>
                   <h3 className="text-2xl font-light text-architectural mb-4">{block.headline}</h3>
                   <p className="text-muted-foreground leading-relaxed">{block.body}</p>
                 </motion.div>
@@ -110,8 +110,14 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══ PROOF BAR — Seamless, same background ═══ */}
-      <section className="relative z-20 bg-background py-20">
+      {/* ═══ PROOF BAR ═══ */}
+      <motion.section
+        className="relative z-20 bg-background py-20"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      >
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
@@ -150,7 +156,7 @@ const Index = () => {
             />
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ═══ THE LINE — blurs into sharp focus (faster) ═══ */}
       <motion.section
@@ -169,8 +175,14 @@ const Index = () => {
         </div>
       </motion.section>
 
-      {/* ═══ WORK PREVIEW — Clean, same canvas ═══ */}
-      <section className="relative z-20 bg-background">
+      {/* ═══ WORK PREVIEW ═══ */}
+      <motion.section
+        className="relative z-20 bg-background"
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+      >
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto py-24">
             <motion.h2
@@ -220,7 +232,7 @@ const Index = () => {
             </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ═══ FOOTER CTA ═══ */}
       <div className="relative z-20">
