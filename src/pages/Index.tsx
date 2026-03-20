@@ -6,103 +6,61 @@ import Hero from "@/components/Hero";
 import FooterCTA from "@/components/FooterCTA";
 
 const Index = () => {
-  // Refs for each section to track scroll
-  const sectionBRef = useRef<HTMLDivElement>(null);
-  const sectionCRef = useRef<HTMLDivElement>(null);
-  const sectionDRef = useRef<HTMLDivElement>(null);
-  const sectionERef = useRef<HTMLDivElement>(null);
-  const sectionFRef = useRef<HTMLDivElement>(null);
-  const heroRef = useRef<HTMLDivElement>(null);
-
-  // Hero fades/blurs out as you scroll away
-  const { scrollYProgress: heroExit } = useScroll({
-    target: heroRef,
+  /* ── Transition 1: Section B climbs over sticky Hero ── */
+  const heroWrapRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroP } = useScroll({
+    target: heroWrapRef,
     offset: ["start start", "end start"],
   });
-  const heroBlur = useTransform(heroExit, [0.5, 1], [0, 12]);
-  const heroOpacity = useTransform(heroExit, [0.5, 1], [1, 0]);
-  const heroScale = useTransform(heroExit, [0.5, 1], [1, 0.95]);
+  const heroScale = useTransform(heroP, [0, 1], [1, 0.92]);
+  const heroBlur = useTransform(heroP, [0.4, 1], [0, 10]);
+  const heroOpacity = useTransform(heroP, [0.6, 1], [1, 0.3]);
 
-  // Section B slides up over hero
-  const { scrollYProgress: sectionBProgress } = useScroll({
-    target: sectionBRef,
+  /* ── Transition 2: Section C wipes over B with a clip reveal ── */
+  const clipWrapRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: clipP } = useScroll({
+    target: clipWrapRef,
+    offset: ["start end", "end end"],
+  });
+  // Clip from bottom edge upward: inset(bottom 0 0 0) → inset(0)
+  const clipInset = useTransform(clipP, [0, 1], [100, 0]);
+
+  /* ── Transition 3: Section D (The Line) fades/blurs through B's exit ── */
+  const lineRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: lineP } = useScroll({
+    target: lineRef,
+    offset: ["start end", "start 0.35"],
+  });
+  const lineBlur = useTransform(lineP, [0, 1], [14, 0]);
+  const lineOpacity = useTransform(lineP, [0, 1], [0, 1]);
+  const lineScale = useTransform(lineP, [0, 1], [1.05, 1]);
+
+  /* ── Transition 4: Section E slides up over D with shadow ── */
+  const workWrapRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: workP } = useScroll({
+    target: workWrapRef,
+    offset: ["start end", "start 0.15"],
+  });
+  const workY = useTransform(workP, [0, 1], [200, 0]);
+  const workRoundness = useTransform(workP, [0, 0.8, 1], [24, 8, 0]);
+
+  /* ── Transition 5: Footer scales up from behind Section E ── */
+  const footerWrapRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: footerP } = useScroll({
+    target: footerWrapRef,
     offset: ["start end", "start 0.3"],
   });
-  const sectionBY = useTransform(sectionBProgress, [0, 1], [120, 0]);
-  const sectionBOpacity = useTransform(sectionBProgress, [0, 0.5], [0, 1]);
+  const footerScale = useTransform(footerP, [0, 1], [0.88, 1]);
+  const footerBlur = useTransform(footerP, [0, 0.7], [8, 0]);
+  const footerOpacity = useTransform(footerP, [0, 0.5], [0, 1]);
 
-  // Section C — proof bar
-  const { scrollYProgress: sectionCProgress } = useScroll({
-    target: sectionCRef,
-    offset: ["start end", "start 0.4"],
-  });
-  const sectionCScale = useTransform(sectionCProgress, [0, 1], [0.92, 1]);
-  const sectionCOpacity = useTransform(sectionCProgress, [0, 0.6], [0, 1]);
-
-  // Section D — the line
-  const { scrollYProgress: sectionDProgress } = useScroll({
-    target: sectionDRef,
-    offset: ["start end", "start 0.4"],
-  });
-  const sectionDBlur = useTransform(sectionDProgress, [0, 0.8], [8, 0]);
-  const sectionDOpacity = useTransform(sectionDProgress, [0, 0.8], [0, 1]);
-
-  // Section E — work preview
-  const { scrollYProgress: sectionEProgress } = useScroll({
-    target: sectionERef,
-    offset: ["start end", "start 0.3"],
-  });
-  const sectionEY = useTransform(sectionEProgress, [0, 1], [80, 0]);
-  const sectionEOpacity = useTransform(sectionEProgress, [0, 0.5], [0, 1]);
-
-  // Section F — footer CTA
-  const { scrollYProgress: sectionFProgress } = useScroll({
-    target: sectionFRef,
-    offset: ["start end", "start 0.5"],
-  });
-  const sectionFScale = useTransform(sectionFProgress, [0, 1], [0.9, 1]);
-  const sectionFOpacity = useTransform(sectionFProgress, [0, 0.6], [0, 1]);
-  const sectionFBlur = useTransform(sectionFProgress, [0, 0.6], [6, 0]);
-
-  // Individual card animations for Section B
-  const card1Ref = useRef<HTMLDivElement>(null);
-  const card2Ref = useRef<HTMLDivElement>(null);
-  const card3Ref = useRef<HTMLDivElement>(null);
-
-  const { scrollYProgress: c1 } = useScroll({ target: card1Ref, offset: ["start end", "start 0.5"] });
-  const { scrollYProgress: c2 } = useScroll({ target: card2Ref, offset: ["start end", "start 0.5"] });
-  const { scrollYProgress: c3 } = useScroll({ target: card3Ref, offset: ["start end", "start 0.5"] });
-
-  const c1Y = useTransform(c1, [0, 1], [40, 0]);
-  const c1O = useTransform(c1, [0, 0.6], [0, 1]);
-  const c2Y = useTransform(c2, [0, 1], [40, 0]);
-  const c2O = useTransform(c2, [0, 0.6], [0, 1]);
-  const c3Y = useTransform(c3, [0, 1], [40, 0]);
-  const c3O = useTransform(c3, [0, 0.6], [0, 1]);
-
-  // Work preview cards
-  const work1Ref = useRef<HTMLDivElement>(null);
-  const work2Ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: w1 } = useScroll({ target: work1Ref, offset: ["start end", "start 0.4"] });
-  const { scrollYProgress: w2 } = useScroll({ target: work2Ref, offset: ["start end", "start 0.4"] });
-  const w1X = useTransform(w1, [0, 1], [-60, 0]);
-  const w1O = useTransform(w1, [0, 0.5], [0, 1]);
-  const w2X = useTransform(w2, [0, 1], [60, 0]);
-  const w2O = useTransform(w2, [0, 0.5], [0, 1]);
-
-  // Proof bar metrics
-  const m1Ref = useRef<HTMLDivElement>(null);
-  const m2Ref = useRef<HTMLDivElement>(null);
-  const m3Ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: m1p } = useScroll({ target: m1Ref, offset: ["start end", "start 0.5"] });
-  const { scrollYProgress: m2p } = useScroll({ target: m2Ref, offset: ["start end", "start 0.5"] });
-  const { scrollYProgress: m3p } = useScroll({ target: m3Ref, offset: ["start end", "start 0.5"] });
-  const m1Scale = useTransform(m1p, [0, 1], [0.7, 1]);
-  const m1O = useTransform(m1p, [0, 0.6], [0, 1]);
-  const m2Scale = useTransform(m2p, [0, 1], [0.7, 1]);
-  const m2O = useTransform(m2p, [0, 0.6], [0, 1]);
-  const m3Scale = useTransform(m3p, [0, 1], [0.7, 1]);
-  const m3O = useTransform(m3p, [0, 0.6], [0, 1]);
+  /* ── Staggered card reveals ── */
+  const c1Ref = useRef<HTMLDivElement>(null);
+  const c2Ref = useRef<HTMLDivElement>(null);
+  const c3Ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: c1p } = useScroll({ target: c1Ref, offset: ["start end", "start 0.55"] });
+  const { scrollYProgress: c2p } = useScroll({ target: c2Ref, offset: ["start end", "start 0.55"] });
+  const { scrollYProgress: c3p } = useScroll({ target: c3Ref, offset: ["start end", "start 0.55"] });
 
   const blocks = [
     {
@@ -121,46 +79,39 @@ const Index = () => {
       body: "We automate business processes end to end. Data pipelines, approval workflows, reporting, integrations. What used to take a team now runs on infrastructure.",
     },
   ];
-
-  const cardRefs = [card1Ref, card2Ref, card3Ref];
-  const cardYs = [c1Y, c2Y, c3Y];
-  const cardOs = [c1O, c2O, c3O];
+  const cardRefs = [c1Ref, c2Ref, c3Ref];
+  const cardProgresses = [c1p, c2p, c3p];
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Navigation />
 
-      {/* Hero — sticky, blurs & scales down as you scroll past */}
-      <div ref={heroRef} className="relative z-10">
-        <motion.div
-          style={{
-            opacity: heroOpacity,
-            scale: heroScale,
-            filter: useTransform(heroBlur, (v) => `blur(${v}px)`),
-          }}
-        >
-          <Hero />
-        </motion.div>
+      {/* ═══ HERO — Stays sticky while Section B scrolls over it ═══ */}
+      <div ref={heroWrapRef} className="relative h-[200vh]">
+        <div className="sticky top-0 h-screen z-10">
+          <motion.div
+            className="h-full"
+            style={{
+              scale: heroScale,
+              opacity: heroOpacity,
+              filter: useTransform(heroBlur, (v) => `blur(${v}px)`),
+            }}
+          >
+            <Hero />
+          </motion.div>
+        </div>
       </div>
 
-      {/* Section B — slides up over hero with overlap */}
-      <motion.section
-        ref={sectionBRef}
-        className="relative z-20 py-32 bg-background"
-        style={{
-          y: sectionBY,
-          opacity: sectionBOpacity,
-          boxShadow: "0 -40px 80px -20px hsl(0 0% 0% / 0.15)",
-        }}
-      >
+      {/* ═══ SECTION B — What We Build — slides over the hero ═══ */}
+      <section className="relative z-20 -mt-[100vh] bg-background py-32" style={{ boxShadow: "0 -60px 100px -30px hsl(0 0% 0% / 0.2)" }}>
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
             <motion.h2
               className="text-4xl md:text-6xl font-light text-architectural mb-20"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
               Three ways to stop being the bottleneck.
             </motion.h2>
@@ -169,7 +120,10 @@ const Index = () => {
                 <motion.div
                   key={i}
                   ref={cardRefs[i]}
-                  style={{ y: cardYs[i], opacity: cardOs[i] }}
+                  style={{
+                    y: useTransform(cardProgresses[i], [0, 1], [50, 0]),
+                    opacity: useTransform(cardProgresses[i], [0, 0.6], [0, 1]),
+                  }}
                 >
                   <p className="text-minimal text-muted-foreground mb-4">{block.label}</p>
                   <h3 className="text-2xl font-light text-architectural mb-4">{block.headline}</h3>
@@ -179,49 +133,49 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      {/* Section C — Proof Bar — scales in from small */}
-      <motion.section
-        ref={sectionCRef}
-        className="relative z-30 py-20 bg-muted"
-        style={{
-          scale: sectionCScale,
-          opacity: sectionCOpacity,
-        }}
-      >
-        <div className="container mx-auto px-6">
-          <div className="max-w-5xl mx-auto grid grid-cols-3 gap-8 text-center">
-            {[
-              { number: "40+", label: "Ventures backed" },
-              { number: "8+", label: "Industries served" },
-              { number: "3", label: "Continents" },
-            ].map((metric, i) => {
-              const refs = [m1Ref, m2Ref, m3Ref];
-              const scales = [m1Scale, m2Scale, m3Scale];
-              const opacities = [m1O, m2O, m3O];
-              return (
-                <motion.div
-                  key={i}
-                  ref={refs[i]}
-                  style={{ scale: scales[i], opacity: opacities[i] }}
-                >
-                  <p className="text-4xl md:text-5xl font-light text-architectural mb-2">{metric.number}</p>
-                  <p className="text-minimal text-muted-foreground">{metric.label}</p>
-                </motion.div>
-              );
-            })}
-          </div>
+      {/* ═══ SECTION C — Proof Bar — clip-reveals upward over Section B ═══ */}
+      <div ref={clipWrapRef} className="relative z-30 h-[60vh]">
+        <div className="sticky top-0">
+          <motion.section
+            className="py-20 bg-muted overflow-hidden"
+            style={{
+              clipPath: useTransform(clipInset, (v) => `inset(${v}% 0 0 0)`),
+            }}
+          >
+            <div className="container mx-auto px-6">
+              <div className="max-w-5xl mx-auto grid grid-cols-3 gap-8 text-center">
+                {[
+                  { number: "40+", label: "Ventures backed" },
+                  { number: "8+", label: "Industries served" },
+                  { number: "3", label: "Continents" },
+                ].map((metric, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, amount: 0.8 }}
+                    transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <p className="text-4xl md:text-5xl font-light text-architectural mb-2">{metric.number}</p>
+                    <p className="text-minimal text-muted-foreground">{metric.label}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
         </div>
-      </motion.section>
+      </div>
 
-      {/* Section D — The Line — blurs in from nothing */}
+      {/* ═══ SECTION D — The Line — blurs into sharp focus ═══ */}
       <motion.section
-        ref={sectionDRef}
+        ref={lineRef}
         className="relative z-30 py-24 bg-background"
         style={{
-          opacity: sectionDOpacity,
-          filter: useTransform(sectionDBlur, (v) => `blur(${v}px)`),
+          opacity: lineOpacity,
+          scale: lineScale,
+          filter: useTransform(lineBlur, (v) => `blur(${v}px)`),
         }}
       >
         <div className="container mx-auto px-6 text-center">
@@ -231,65 +185,77 @@ const Index = () => {
         </div>
       </motion.section>
 
-      {/* Section E — Work Preview — slides up with card stagger */}
-      <motion.section
-        ref={sectionERef}
-        className="relative z-40 py-32 bg-muted"
-        style={{
-          y: sectionEY,
-          opacity: sectionEOpacity,
-          boxShadow: "0 -30px 60px -15px hsl(0 0% 0% / 0.1)",
-        }}
-      >
-        <div className="container mx-auto px-6">
-          <div className="max-w-7xl mx-auto">
-            <motion.h2
-              className="text-4xl md:text-6xl font-light text-architectural mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            >
-              Built. Running. Delivering.
-            </motion.h2>
-            <div className="grid md:grid-cols-2 gap-12 mb-12">
-              <motion.div ref={work1Ref} style={{ x: w1X, opacity: w1O }}>
-                <div className="border-t border-border pt-8">
-                  <p className="text-minimal text-muted-foreground mb-4">FINANCIAL EDUCATION</p>
-                  <p className="text-lg mb-2">AI guidance platform that scales two advisors' expertise to thousands of subscribers.</p>
-                  <p className="text-muted-foreground">Recurring revenue product. Zero calendar impact on the founding team.</p>
-                </div>
-              </motion.div>
-              <motion.div ref={work2Ref} style={{ x: w2X, opacity: w2O }}>
-                <div className="border-t border-border pt-8">
-                  <p className="text-minimal text-muted-foreground mb-4">LEAD GENERATION</p>
-                  <p className="text-lg mb-2">Automated prospecting pipeline that classifies, enriches, and routes contractor leads across an entire state.</p>
-                  <p className="text-muted-foreground">Hundreds of qualified leads processed weekly without a single manual lookup.</p>
-                </div>
+      {/* ═══ SECTION E — Work Preview — slides up with rounded corners that flatten ═══ */}
+      <div ref={workWrapRef} className="relative z-40">
+        <motion.section
+          className="py-32 bg-muted overflow-hidden"
+          style={{
+            y: workY,
+            borderTopLeftRadius: useTransform(workRoundness, (v) => `${v}px`),
+            borderTopRightRadius: useTransform(workRoundness, (v) => `${v}px`),
+            boxShadow: "0 -30px 60px -15px hsl(0 0% 0% / 0.12)",
+          }}
+        >
+          <div className="container mx-auto px-6">
+            <div className="max-w-7xl mx-auto">
+              <motion.h2
+                className="text-4xl md:text-6xl font-light text-architectural mb-16"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              >
+                Built. Running. Delivering.
+              </motion.h2>
+              <div className="grid md:grid-cols-2 gap-12 mb-12">
+                <motion.div
+                  initial={{ opacity: 0, x: -50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.4 }}
+                  transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="border-t border-border pt-8">
+                    <p className="text-minimal text-muted-foreground mb-4">FINANCIAL EDUCATION</p>
+                    <p className="text-lg mb-2">AI guidance platform that scales two advisors' expertise to thousands of subscribers.</p>
+                    <p className="text-muted-foreground">Recurring revenue product. Zero calendar impact on the founding team.</p>
+                  </div>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.4 }}
+                  transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="border-t border-border pt-8">
+                    <p className="text-minimal text-muted-foreground mb-4">LEAD GENERATION</p>
+                    <p className="text-lg mb-2">Automated prospecting pipeline that classifies, enriches, and routes contractor leads across an entire state.</p>
+                    <p className="text-muted-foreground">Hundreds of qualified leads processed weekly without a single manual lookup.</p>
+                  </div>
+                </motion.div>
+              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <Link to="/work" className="text-foreground hover:text-muted-foreground transition-colors duration-300">
+                  See all work →
+                </Link>
               </motion.div>
             </div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <Link to="/work" className="text-foreground hover:text-muted-foreground transition-colors duration-300">
-                See all work →
-              </Link>
-            </motion.div>
           </div>
-        </div>
-      </motion.section>
+        </motion.section>
+      </div>
 
-      {/* Section F — Footer CTA — scales & blurs in */}
+      {/* ═══ SECTION F — Footer CTA — scales up from behind ═══ */}
       <motion.div
-        ref={sectionFRef}
+        ref={footerWrapRef}
         className="relative z-50"
         style={{
-          scale: sectionFScale,
-          opacity: sectionFOpacity,
-          filter: useTransform(sectionFBlur, (v) => `blur(${v}px)`),
+          scale: footerScale,
+          opacity: footerOpacity,
+          filter: useTransform(footerBlur, (v) => `blur(${v}px)`),
         }}
       >
         <FooterCTA />
