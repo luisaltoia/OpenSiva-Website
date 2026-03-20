@@ -4,7 +4,9 @@ import { useMemo } from "react";
 interface Dot {
   col: number;
   row: number;
-  delay: number;
+  blinkSeed: number[];
+  blinkDuration: number;
+  blinkDelay: number;
 }
 
 const DOT_SIZE = 6;
@@ -14,25 +16,31 @@ const STEP = DOT_SIZE + GAP;
 const ParallaxPixels = () => {
   const dots = useMemo<Dot[]>(() => {
     const arr: Dot[] = [];
-    // Calculate columns to fill viewport width
-    const cols = Math.ceil(1920 / STEP) + 2;
+    const cols = Math.ceil(2000 / STEP);
 
-    // Generate a jagged top edge using layered sine waves
     for (let c = 0; c < cols; c++) {
       const t = c / cols;
-      // Multi-frequency wave for organic jagged edge
-      const h1 = Math.sin(t * Math.PI * 6) * 4;
-      const h2 = Math.sin(t * Math.PI * 14 + 1.3) * 2;
+      // Multi-frequency wave for organic jagged top edge
+      const h1 = Math.sin(t * Math.PI * 6) * 5;
+      const h2 = Math.sin(t * Math.PI * 14 + 1.3) * 2.5;
       const h3 = Math.sin(t * Math.PI * 22 + 0.7) * 1.5;
       const h4 = Math.cos(t * Math.PI * 10 + 2.1) * 3;
-      // Base height + wave variations (rows of dots in this column)
-      const height = Math.max(2, Math.round(8 + h1 + h2 + h3 + h4));
+      const h5 = Math.sin(t * Math.PI * 30 + 3.0) * 1;
+      const height = Math.max(2, Math.round(10 + h1 + h2 + h3 + h4 + h5));
 
       for (let r = 0; r < height; r++) {
+        // Pre-generate random blink keyframes (never go below 0.25)
+        const s1 = 0.3 + Math.random() * 0.7;
+        const s2 = 0.5 + Math.random() * 0.5;
+        const s3 = 0.25 + Math.random() * 0.5;
+        const s4 = 0.6 + Math.random() * 0.4;
+        const s5 = 0.35 + Math.random() * 0.6;
         arr.push({
           col: c,
           row: r,
-          delay: Math.random() * 4,
+          blinkSeed: [s1, s2, s3, s4, s5],
+          blinkDuration: 2 + Math.random() * 4,
+          blinkDelay: Math.random() * 5,
         });
       }
     }
@@ -41,11 +49,11 @@ const ParallaxPixels = () => {
 
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 overflow-hidden pointer-events-none"
-      style={{ zIndex: 15 }}
+      className="absolute top-0 left-0 right-0 overflow-hidden pointer-events-none"
+      style={{ zIndex: 5, transform: "translateY(-100%)" }}
     >
-      {/* The dot grid sits at the very bottom, acting as the top edge of the white section */}
-      <div className="relative w-full" style={{ height: 20 * STEP }}>
+      {/* Grid grows upward from the section boundary */}
+      <div className="relative w-full" style={{ height: 22 * STEP }}>
         {dots.map((d, i) => (
           <BlinkDot key={i} dot={d} />
         ))}
@@ -55,13 +63,13 @@ const ParallaxPixels = () => {
 };
 
 const BlinkDot = ({ dot }: { dot: Dot }) => {
-  // Position from bottom up: row 0 is the bottommost
   const left = dot.col * STEP;
+  // row 0 = closest to the white section (bottom), higher rows go up into the black
   const bottom = dot.row * STEP;
 
   return (
     <motion.div
-      className="absolute rounded-full bg-white"
+      className="absolute rounded-full bg-background"
       style={{
         width: DOT_SIZE,
         height: DOT_SIZE,
@@ -70,17 +78,11 @@ const BlinkDot = ({ dot }: { dot: Dot }) => {
         willChange: "opacity",
       }}
       animate={{
-        opacity: [
-          0.4 + Math.random() * 0.5,
-          0.7 + Math.random() * 0.3,
-          0.3 + Math.random() * 0.4,
-          0.6 + Math.random() * 0.4,
-          0.4 + Math.random() * 0.5,
-        ],
+        opacity: dot.blinkSeed,
       }}
       transition={{
-        duration: 2 + Math.random() * 3,
-        delay: dot.delay,
+        duration: dot.blinkDuration,
+        delay: dot.blinkDelay,
         repeat: Infinity,
         ease: "easeInOut",
       }}
