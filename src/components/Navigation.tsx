@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/opensiva-logo.png";
+import neonLogo from "@/assets/opensiva-neon-logo.png";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -10,7 +10,7 @@ const Navigation = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/80 backdrop-blur-md border-b border-white/5">
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center">
-          <img src={logo} alt="OpenSiva" className="h-6" />
+          <img src={neonLogo} alt="OpenSiva" className="h-8" />
         </Link>
 
         <div className="hidden md:flex items-center space-x-12">
