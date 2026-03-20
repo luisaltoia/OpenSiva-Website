@@ -92,7 +92,7 @@ const Index = () => {
 
       {/* ═══ HERO — Stays sticky while Section B scrolls over it ═══ */}
       <div ref={heroWrapRef} className="relative h-[300vh]">
-        <div className="sticky top-0 h-screen z-10">
+        <div className="sticky top-0 h-screen z-10 overflow-hidden">
           <motion.div
             className="h-full"
             style={{
@@ -101,12 +101,12 @@ const Index = () => {
           >
             <Hero />
           </motion.div>
+          <ParallaxPixels scrollProgress={heroP} />
         </div>
       </div>
 
       {/* ═══ SECTION B — What We Build — slides over the hero ═══ */}
-      <section className="relative z-20 -mt-[100vh] bg-background py-32 overflow-visible">
-        <ParallaxPixels scrollProgress={heroP} />
+      <section className="relative z-20 -mt-[100vh] bg-background py-32">
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
             <motion.h2
