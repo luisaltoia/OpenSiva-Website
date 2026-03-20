@@ -7,26 +7,26 @@ const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/80 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-6 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center">
-          <img src={logo} alt="OpenSiva" className="h-6 invert dark:invert-0" />
+          <img src={logo} alt="OpenSiva" className="h-6" />
         </Link>
 
         <div className="hidden md:flex items-center space-x-12">
-          <Link to="/work" className="text-minimal text-muted-foreground hover:text-foreground transition-colors duration-300">
+          <Link to="/work" className="text-minimal text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-300">
             WORK
           </Link>
-          <Link to="/how" className="text-minimal text-muted-foreground hover:text-foreground transition-colors duration-300">
+          <Link to="/how" className="text-minimal text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-300">
             HOW
           </Link>
-          <Link to="/about" className="text-minimal text-muted-foreground hover:text-foreground transition-colors duration-300">
+          <Link to="/about" className="text-minimal text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-300">
             ABOUT
           </Link>
         </div>
 
         <div className="hidden md:flex items-center">
-          <Button asChild size="sm">
+          <Button asChild size="sm" variant="outline" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
             <Link to="/contact">Talk to Us</Link>
           </Button>
         </div>
@@ -34,7 +34,7 @@ const Navigation = () => {
         <Button
           variant="ghost"
           size="sm"
-          className="md:hidden"
+          className="md:hidden text-primary-foreground"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           {isMenuOpen ? '✕' : '☰'}
