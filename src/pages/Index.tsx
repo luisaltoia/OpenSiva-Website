@@ -175,8 +175,14 @@ const Index = () => {
         </div>
       </motion.section>
 
-      {/* ═══ WORK PREVIEW — Clean, same canvas ═══ */}
-      <section className="relative z-20 bg-background">
+      {/* ═══ WORK PREVIEW ═══ */}
+      <motion.section
+        className="relative z-20 bg-background"
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+      >
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto py-24">
             <motion.h2
@@ -226,7 +232,7 @@ const Index = () => {
             </motion.div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ═══ FOOTER CTA ═══ */}
       <div className="relative z-20">
