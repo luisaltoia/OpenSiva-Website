@@ -36,27 +36,41 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
       const wave = Math.sin(t * Math.PI * 4) * 1.5 + Math.sin(t * Math.PI * 9 + 1) * 0.8;
       const baseH = Math.round(BASE_HEIGHT + wave);
 
+      // Base dots — most solid, but ~8% blink for scattered futuristic feel
       for (let r = 0; r < baseH; r++) {
-        arr.push({ col: c, row: r, isScatter: false });
+        const shouldBlink = seeded(c * 431 + r * 59) < 0.08;
+        const s = seeded(c * 100 + r);
+        arr.push({
+          col: c,
+          row: r,
+          isScatter: false,
+          blinkSeed: shouldBlink
+            ? [1, 0.3 + seeded(c * 211 + r) * 0.4, 1, 0.5 + seeded(c * 311 + r) * 0.3, 1]
+            : undefined,
+          blinkDuration: shouldBlink ? 3 + s * 6 : undefined,
+          blinkDelay: shouldBlink ? seeded(c * 611 + r) * 8 : undefined,
+        });
       }
 
+      // Scatter dots above base
       for (let r = baseH; r < baseH + MAX_SCATTER; r++) {
         const distFromBase = r - baseH;
         const prob = 1 - distFromBase / MAX_SCATTER;
         const threshold = prob * prob * prob;
         if (seeded(c * 1000 + r * 7 + 3) < threshold) {
           const isSolid = seeded(c * 333 + r * 17) < 0.6;
-          const shouldBlink = !isSolid && seeded(c * 777 + r * 13) < 0.5;
+          // ~20% of scatter dots blink, spread randomly
+          const shouldBlink = !isSolid && seeded(c * 777 + r * 13) < 0.35;
           const s = seeded(c * 100 + r);
           arr.push({
             col: c,
             row: r,
             isScatter: !isSolid,
             blinkSeed: shouldBlink
-              ? [0.5 + s * 0.5, 0.8 + seeded(c * 200 + r) * 0.2, 0.4 + seeded(c * 300 + r) * 0.4, 0.9, 0.5 + s * 0.5]
+              ? [0.4 + s * 0.6, 1, 0.3 + seeded(c * 200 + r) * 0.3, 0.8, 0.5 + s * 0.5]
               : undefined,
-            blinkDuration: shouldBlink ? 2 + s * 4 : undefined,
-            blinkDelay: shouldBlink ? seeded(c * 500 + r) * 5 : undefined,
+            blinkDuration: shouldBlink ? 2 + s * 7 : undefined,
+            blinkDelay: shouldBlink ? seeded(c * 500 + r) * 10 : undefined,
           });
         }
       }
