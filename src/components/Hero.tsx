@@ -47,7 +47,7 @@ const Hero = () => {
             <img
               src={neonLogo}
               alt="OpenSiva"
-              className="h-16 md:h-24 lg:h-28 neon-glow"
+              className="h-28 md:h-40 lg:h-48 neon-glow"
             />
           </div>
 
