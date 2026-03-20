@@ -96,9 +96,7 @@ const Index = () => {
           <motion.div
             className="h-full"
             style={{
-              scale: heroScale,
               opacity: heroOpacity,
-              filter: useTransform(heroBlur, (v) => `blur(${v}px)`),
             }}
           >
             <Hero />
