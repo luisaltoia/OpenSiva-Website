@@ -100,7 +100,7 @@ const Index = () => {
                     opacity: useTransform(cardProgresses[i], [0, 0.6], [0, 1]),
                   }}
                 >
-                  <p className="text-minimal text-muted-foreground mb-4">{block.label}</p>
+                  <span className="inline-block bg-foreground text-background text-[10px] tracking-widest uppercase font-medium px-4 py-1.5 rounded-full mb-4">{block.label}</span>
                   <h3 className="text-2xl font-light text-architectural mb-4">{block.headline}</h3>
                   <p className="text-muted-foreground leading-relaxed">{block.body}</p>
                 </motion.div>
