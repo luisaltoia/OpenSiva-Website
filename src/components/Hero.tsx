@@ -32,13 +32,13 @@ const Hero = ({ scrollProgress }: HeroProps) => {
     }))
   ).current;
 
-  // Phase 1 (0→0.35): logo fades out
-  const logoOpacity = useTransform(scrollProgress ?? new MotionValue(), [0, 0.35], [1, 0]);
-  const logoScale = useTransform(scrollProgress ?? new MotionValue(), [0, 0.35], [1, 0.85]);
+  // Phase 1 (0→0.2): logo fades out within first ~40vh of scroll
+  const logoOpacity = useTransform(scrollProgress ?? new MotionValue(), [0, 0.2], [1, 0]);
+  const logoScale = useTransform(scrollProgress ?? new MotionValue(), [0, 0.2], [1, 0.85]);
 
-  // Phase 2 (0.25→0.55): text fades in
-  const textOpacity = useTransform(scrollProgress ?? new MotionValue(), [0.25, 0.55], [0, 1]);
-  const textY = useTransform(scrollProgress ?? new MotionValue(), [0.25, 0.55], [30, 0]);
+  // Phase 2 (0.15→0.35): text fades in right after logo starts fading
+  const textOpacity = useTransform(scrollProgress ?? new MotionValue(), [0.15, 0.35], [0, 1]);
+  const textY = useTransform(scrollProgress ?? new MotionValue(), [0.15, 0.35], [30, 0]);
 
   return (
     <section className="relative h-screen flex items-center overflow-hidden bg-black">
