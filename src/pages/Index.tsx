@@ -91,7 +91,7 @@ const Index = () => {
       <Navigation />
 
       {/* ═══ HERO — Stays sticky while Section B scrolls over it ═══ */}
-      <div ref={heroWrapRef} className="relative h-[200vh]">
+      <div ref={heroWrapRef} className="relative h-[300vh]">
         <div className="sticky top-0 h-screen z-10">
           <motion.div
             className="h-full"
@@ -99,7 +99,7 @@ const Index = () => {
               opacity: heroOpacity,
             }}
           >
-            <Hero />
+            <Hero scrollProgress={heroP} />
           </motion.div>
         </div>
       </div>
