@@ -14,13 +14,13 @@ const Navigation = () => {
         </Link>
 
         <div className="hidden md:flex items-center space-x-12">
-          <Link to="/work" className="text-minimal text-muted-foreground hover:text-foreground transition-colors duration-300">
+          <Link to="/work" className="text-minimal text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-300">
             WORK
           </Link>
-          <Link to="/how" className="text-minimal text-muted-foreground hover:text-foreground transition-colors duration-300">
+          <Link to="/how" className="text-minimal text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-300">
             HOW
           </Link>
-          <Link to="/about" className="text-minimal text-muted-foreground hover:text-foreground transition-colors duration-300">
+          <Link to="/about" className="text-minimal text-primary-foreground/60 hover:text-primary-foreground transition-colors duration-300">
             ABOUT
           </Link>
         </div>
