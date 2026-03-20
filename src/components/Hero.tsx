@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, MotionValue, useTransform } from "framer-motion";
 import neonLogo from "@/assets/opensiva-neon-logo.png";
 
 const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; size: number }) => (
@@ -17,7 +17,11 @@ const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; 
   />
 );
 
-const Hero = () => {
+interface HeroProps {
+  scrollProgress?: MotionValue<number>;
+}
+
+const Hero = ({ scrollProgress }: HeroProps) => {
   const particles = useRef(
     Array.from({ length: 12 }, (_, i) => ({
       id: i,
@@ -28,43 +32,32 @@ const Hero = () => {
     }))
   ).current;
 
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "0.5 start"],
-  });
+  // Phase 1 (0→0.35): logo fades out
+  const logoOpacity = useTransform(scrollProgress ?? new MotionValue(), [0, 0.35], [1, 0]);
+  const logoScale = useTransform(scrollProgress ?? new MotionValue(), [0, 0.35], [1, 0.85]);
 
-  // Logo fades out + scales down as we scroll
-  const logoOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
-  const logoScale = useTransform(scrollYProgress, [0, 0.4], [1, 0.8]);
-  const logoY = useTransform(scrollYProgress, [0, 0.4], [0, -40]);
-
-  // Text fades in as we scroll
-  const textOpacity = useTransform(scrollYProgress, [0.2, 0.6], [0, 1]);
-  const textY = useTransform(scrollYProgress, [0.2, 0.6], [40, 0]);
+  // Phase 2 (0.25→0.55): text fades in
+  const textOpacity = useTransform(scrollProgress ?? new MotionValue(), [0.25, 0.55], [0, 1]);
+  const textY = useTransform(scrollProgress ?? new MotionValue(), [0.25, 0.55], [30, 0]);
 
   return (
-    <section ref={ref} className="relative h-screen flex items-center overflow-hidden bg-black">
-      {/* Floating particles */}
+    <section className="relative h-screen flex items-center overflow-hidden bg-black">
       {particles.map((p) => (
         <Particle key={p.id} delay={p.delay} x={p.x} y={p.y} size={p.size} />
       ))}
 
-      {/* Subtle moving line accents */}
       <div className="absolute right-[20%] top-[15%] w-px h-24 bg-gradient-to-b from-transparent via-white/10 to-transparent animate-drift-slow" />
       <div className="absolute right-[35%] bottom-[20%] w-px h-16 bg-gradient-to-b from-transparent via-white/[0.07] to-transparent animate-drift-slow-reverse" />
       <div className="absolute right-[60%] top-[60%] w-12 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent animate-drift-horizontal" />
 
-      {/* Content */}
       <div className="relative z-10 container mx-auto px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Neon logo — visible initially, fades out on scroll */}
+        <div className="max-w-4xl mx-auto text-center relative">
+          {/* Logo — visible initially, fades out on first scroll phase */}
           <motion.div
-            className="flex justify-center mb-10"
+            className="flex justify-center absolute inset-0 items-center"
             style={{
               opacity: logoOpacity,
               scale: logoScale,
-              y: logoY,
             }}
           >
             <img
@@ -74,7 +67,7 @@ const Hero = () => {
             />
           </motion.div>
 
-          {/* Headline + subheadline — hidden initially, fades in on scroll */}
+          {/* Text — fades in during second scroll phase */}
           <motion.div
             style={{
               opacity: textOpacity,

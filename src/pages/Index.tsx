@@ -16,7 +16,7 @@ const Index = () => {
   });
   const heroScale = useTransform(heroP, [0, 1], [1, 0.92]);
   const heroBlur = useTransform(heroP, [0.4, 1], [0, 10]);
-  const heroOpacity = useTransform(heroP, [0.6, 1], [1, 0.3]);
+  const heroOpacity = useTransform(heroP, [0.5, 0.85], [1, 0.3]);
 
   /* ── Transition 2: Section C wipes over B with a clip reveal ── */
   const clipWrapRef = useRef<HTMLDivElement>(null);
@@ -91,7 +91,7 @@ const Index = () => {
       <Navigation />
 
       {/* ═══ HERO — Stays sticky while Section B scrolls over it ═══ */}
-      <div ref={heroWrapRef} className="relative h-[200vh]">
+      <div ref={heroWrapRef} className="relative h-[300vh]">
         <div className="sticky top-0 h-screen z-10">
           <motion.div
             className="h-full"
@@ -99,7 +99,7 @@ const Index = () => {
               opacity: heroOpacity,
             }}
           >
-            <Hero />
+            <Hero scrollProgress={heroP} />
           </motion.div>
         </div>
       </div>
