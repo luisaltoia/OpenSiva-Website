@@ -38,17 +38,17 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
 
       // Base dots — most solid, but ~8% blink for scattered futuristic feel
       for (let r = 0; r < baseH; r++) {
-        const shouldBlink = seeded(c * 431 + r * 59) < 0.08;
+        const shouldBlink = seeded(c * 431 + r * 59) < 0.2;
         const s = seeded(c * 100 + r);
         arr.push({
           col: c,
           row: r,
           isScatter: false,
           blinkSeed: shouldBlink
-            ? [1, 0.3 + seeded(c * 211 + r) * 0.4, 1, 0.5 + seeded(c * 311 + r) * 0.3, 1]
+            ? [1, 0.2 + seeded(c * 211 + r) * 0.4, 1, 0.4 + seeded(c * 311 + r) * 0.3, 1]
             : undefined,
-          blinkDuration: shouldBlink ? 3 + s * 6 : undefined,
-          blinkDelay: shouldBlink ? seeded(c * 611 + r) * 8 : undefined,
+          blinkDuration: shouldBlink ? 2 + s * 5 : undefined,
+          blinkDelay: shouldBlink ? seeded(c * 611 + r) * 6 : undefined,
         });
       }
 
