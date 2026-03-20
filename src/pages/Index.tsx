@@ -110,8 +110,14 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══ PROOF BAR — Seamless, same background ═══ */}
-      <section className="relative z-20 bg-background py-20">
+      {/* ═══ PROOF BAR ═══ */}
+      <motion.section
+        className="relative z-20 bg-background py-20"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      >
         <div className="container mx-auto px-6">
           <div className="max-w-5xl mx-auto">
             <motion.div
@@ -150,7 +156,7 @@ const Index = () => {
             />
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* ═══ THE LINE — blurs into sharp focus (faster) ═══ */}
       <motion.section
