@@ -60,7 +60,7 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
         if (seeded(c * 1000 + r * 7 + 3) < threshold) {
           const isSolid = seeded(c * 333 + r * 17) < 0.6;
           // ~20% of scatter dots blink, spread randomly
-          const shouldBlink = !isSolid && seeded(c * 777 + r * 13) < 0.35;
+          const shouldBlink = !isSolid && seeded(c * 777 + r * 13) < 0.6;
           const s = seeded(c * 100 + r);
           arr.push({
             col: c,
