@@ -104,9 +104,6 @@ const Index = () => {
             <Hero />
           </motion.div>
         </div>
-
-        {/* Parallax scatter pixels — lives in the overlap zone between hero & section B */}
-        <ParallaxPixels />
       </div>
 
       {/* ═══ SECTION B — What We Build — slides over the hero ═══ */}
