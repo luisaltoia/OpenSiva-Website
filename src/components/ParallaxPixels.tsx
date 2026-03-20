@@ -83,8 +83,8 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
 
   return (
     <div
-      className="absolute top-0 left-0 right-0 overflow-hidden pointer-events-none"
-      style={{ zIndex: 5, transform: "translateY(-100%)" }}
+      className="absolute bottom-0 left-0 right-0 overflow-hidden pointer-events-none"
+      style={{ zIndex: 30 }}
     >
       <motion.div className="relative w-full" style={{ height: containerHeight }}>
         {dots.map((d, i) => (
