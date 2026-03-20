@@ -31,11 +31,11 @@ const Index = () => {
   const lineRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: lineP } = useScroll({
     target: lineRef,
-    offset: ["start end", "start 0.35"],
+    offset: ["start end", "start 0.6"],
   });
-  const lineBlur = useTransform(lineP, [0, 1], [14, 0]);
-  const lineOpacity = useTransform(lineP, [0, 1], [0, 1]);
-  const lineScale = useTransform(lineP, [0, 1], [1.05, 1]);
+  const lineBlur = useTransform(lineP, [0, 0.6], [10, 0]);
+  const lineOpacity = useTransform(lineP, [0, 0.5], [0, 1]);
+  const lineScale = useTransform(lineP, [0, 1], [1.03, 1]);
 
   /* ── Transition 4: Section E slides up over D with shadow ── */
   const workWrapRef = useRef<HTMLDivElement>(null);
