@@ -58,7 +58,7 @@ const Hero = () => {
             Your playbooks. Your frameworks. Your decision logic. Delivered to thousands of people at once without adding a single person to payroll or a single call to your calendar.
           </p>
           <div className="reveal-delayed">
-            <Button asChild size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white mb-6">
+            <Button asChild size="lg" className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/20 transition-colors duration-300 mb-6">
               <Link to="/contact">Talk to Us</Link>
             </Button>
             <p className="text-xs text-white/30 tracking-wide">
