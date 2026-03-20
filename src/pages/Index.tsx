@@ -4,6 +4,8 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import FooterCTA from "@/components/FooterCTA";
+import ParallaxPixels from "@/components/ParallaxPixels";
+import useScrollProgress from "@/hooks/useScrollProgress";
 
 const Index = () => {
   /* ── Transition 1: Section B climbs over sticky Hero ── */
@@ -82,6 +84,8 @@ const Index = () => {
   const cardRefs = [c1Ref, c2Ref, c3Ref];
   const cardProgresses = [c1p, c2p, c3p];
 
+  useScrollProgress();
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Navigation />
@@ -100,10 +104,13 @@ const Index = () => {
             <Hero />
           </motion.div>
         </div>
+
+        {/* Parallax scatter pixels — lives in the overlap zone between hero & section B */}
+        <ParallaxPixels />
       </div>
 
       {/* ═══ SECTION B — What We Build — slides over the hero ═══ */}
-      <section className="relative z-20 -mt-[100vh] bg-background py-32" style={{ boxShadow: "0 -60px 100px -30px hsl(0 0% 0% / 0.2)" }}>
+      <section className="relative z-20 -mt-[100vh] bg-background py-32">
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
             <motion.h2
