@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useRef } from "react";
-import { motion, MotionValue, useTransform } from "framer-motion";
-import neonLogo from "@/assets/opensiva-neon-logo.png";
+ 
 
 const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; size: number }) => (
   <div
@@ -17,11 +16,7 @@ const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; 
   />
 );
 
-interface HeroProps {
-  scrollProgress?: MotionValue<number>;
-}
-
-const Hero = ({ scrollProgress }: HeroProps) => {
+const Hero = () => {
   const particles = useRef(
     Array.from({ length: 12 }, (_, i) => ({
       id: i,
@@ -31,14 +26,6 @@ const Hero = ({ scrollProgress }: HeroProps) => {
       delay: Math.random() * 5,
     }))
   ).current;
-
-  // Phase 1 (0→0.2): logo fades out within first ~40vh of scroll
-  const logoOpacity = useTransform(scrollProgress ?? new MotionValue(), [0, 0.2], [1, 0]);
-  const logoScale = useTransform(scrollProgress ?? new MotionValue(), [0, 0.2], [1, 0.85]);
-
-  // Phase 2 (0.15→0.35): text fades in right after logo starts fading
-  const textOpacity = useTransform(scrollProgress ?? new MotionValue(), [0.15, 0.35], [0, 1]);
-  const textY = useTransform(scrollProgress ?? new MotionValue(), [0.15, 0.35], [30, 0]);
 
   return (
     <section className="relative h-screen flex items-center overflow-hidden bg-black">
@@ -52,40 +39,17 @@ const Hero = ({ scrollProgress }: HeroProps) => {
 
       <div className="relative z-10 container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center relative">
-          {/* Logo — visible initially, fades out on first scroll phase */}
-          <motion.div
-            className="flex justify-center absolute inset-0 items-center"
-            style={{
-              opacity: logoOpacity,
-              scale: logoScale,
-            }}
-          >
-            <img
-              src={neonLogo}
-              alt="OpenSiva"
-              className="h-44 md:h-64 lg:h-72 neon-glow"
-            />
-          </motion.div>
-
-          {/* Text — fades in during second scroll phase */}
-          <motion.div
-            style={{
-              opacity: textOpacity,
-              y: textY,
-            }}
-          >
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white text-architectural mb-6">
-              We turn what you know into a system that serves thousands.
-            </h1>
-            <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 max-w-2xl mx-auto">
-              Your playbooks. Your frameworks. Your decision logic. Delivered to thousands of people at once without adding a single person to payroll or a single call to your calendar.
-            </p>
-            <div>
-              <Button asChild size="lg" className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/20 transition-colors duration-300 mb-6">
-                <Link to="/contact">Talk to Us</Link>
-              </Button>
-            </div>
-          </motion.div>
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white text-architectural mb-6">
+            We turn what you know into a system that serves thousands.
+          </h1>
+          <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 max-w-2xl mx-auto">
+            Your playbooks. Your frameworks. Your decision logic. Delivered to thousands of people at once without adding a single person to payroll or a single call to your calendar.
+          </p>
+          <div>
+            <Button asChild size="lg" className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/20 transition-colors duration-300 mb-6">
+              <Link to="/contact">Talk to Us</Link>
+            </Button>
+          </div>
         </div>
       </div>
     </section>
