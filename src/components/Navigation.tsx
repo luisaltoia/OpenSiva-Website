@@ -26,7 +26,7 @@ const Navigation = () => {
         </div>
 
         <div className="hidden md:flex items-center">
-          <Button asChild size="sm">
+          <Button asChild size="sm" variant="outline" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
             <Link to="/contact">Talk to Us</Link>
           </Button>
         </div>
