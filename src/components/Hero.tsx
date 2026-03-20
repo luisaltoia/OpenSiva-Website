@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import neonLogo from "@/assets/opensiva-neon-logo.png";
 
 const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; size: number }) => (
   <div
@@ -38,14 +39,23 @@ const Hero = () => {
       <div className="absolute right-[35%] bottom-[20%] w-px h-16 bg-gradient-to-b from-transparent via-white/[0.07] to-transparent animate-drift-slow-reverse" />
       <div className="absolute right-[60%] top-[60%] w-12 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent animate-drift-horizontal" />
 
-      {/* Content — left aligned */}
+      {/* Content */}
       <div className="relative z-10 container mx-auto px-6">
-        <div className="max-w-2xl">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-light text-white text-architectural mb-6 reveal">
-            [HEADLINE — copywriting pending]
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Neon logo as centered headline */}
+          <div className="flex justify-center mb-10 reveal">
+            <img
+              src={neonLogo}
+              alt="OpenSiva"
+              className="h-16 md:h-24 lg:h-28 neon-glow"
+            />
+          </div>
+
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white text-architectural mb-6 reveal">
+            We turn what you know into a system that serves thousands.
           </h1>
-          <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 reveal-delayed max-w-lg">
-            [SUBHEAD — copywriting pending]
+          <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 reveal-delayed max-w-2xl mx-auto">
+            Your playbooks. Your frameworks. Your decision logic. Delivered to thousands of people at once without adding a single person to payroll or a single call to your calendar.
           </p>
           <div className="reveal-delayed">
             <Button asChild size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white mb-6">
