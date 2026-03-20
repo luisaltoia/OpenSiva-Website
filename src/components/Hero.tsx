@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import neonLogo from "@/assets/opensiva-neon-logo.png";
 
 const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; size: number }) => (
@@ -27,8 +28,23 @@ const Hero = () => {
     }))
   ).current;
 
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "0.5 start"],
+  });
+
+  // Logo fades out + scales down as we scroll
+  const logoOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
+  const logoScale = useTransform(scrollYProgress, [0, 0.4], [1, 0.8]);
+  const logoY = useTransform(scrollYProgress, [0, 0.4], [0, -40]);
+
+  // Text fades in as we scroll
+  const textOpacity = useTransform(scrollYProgress, [0.2, 0.6], [0, 1]);
+  const textY = useTransform(scrollYProgress, [0.2, 0.6], [40, 0]);
+
   return (
-    <section className="relative h-screen flex items-center overflow-hidden bg-black">
+    <section ref={ref} className="relative h-screen flex items-center overflow-hidden bg-black">
       {/* Floating particles */}
       {particles.map((p) => (
         <Particle key={p.id} delay={p.delay} x={p.x} y={p.y} size={p.size} />
@@ -42,29 +58,41 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Neon logo as centered headline */}
-          <div className="flex justify-center mb-10 reveal">
+          {/* Neon logo — visible initially, fades out on scroll */}
+          <motion.div
+            className="flex justify-center mb-10"
+            style={{
+              opacity: logoOpacity,
+              scale: logoScale,
+              y: logoY,
+            }}
+          >
             <img
               src={neonLogo}
               alt="OpenSiva"
-              className="h-28 md:h-40 lg:h-48 neon-glow"
+              className="h-44 md:h-64 lg:h-72 neon-glow"
             />
-          </div>
+          </motion.div>
 
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white text-architectural mb-6 reveal">
-            We turn what you know into a system that serves thousands.
-          </h1>
-          <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 reveal-delayed max-w-2xl mx-auto">
-            Your playbooks. Your frameworks. Your decision logic. Delivered to thousands of people at once without adding a single person to payroll or a single call to your calendar.
-          </p>
-          <div className="reveal-delayed">
-            <Button asChild size="lg" className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/20 transition-colors duration-300 mb-6">
-              <Link to="/contact">Talk to Us</Link>
-            </Button>
-            <p className="text-xs text-white/30 tracking-wide">
-              AI infrastructure by SevenTrain Ventures
+          {/* Headline + subheadline — hidden initially, fades in on scroll */}
+          <motion.div
+            style={{
+              opacity: textOpacity,
+              y: textY,
+            }}
+          >
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white text-architectural mb-6">
+              We turn what you know into a system that serves thousands.
+            </h1>
+            <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 max-w-2xl mx-auto">
+              Your playbooks. Your frameworks. Your decision logic. Delivered to thousands of people at once without adding a single person to payroll or a single call to your calendar.
             </p>
-          </div>
+            <div>
+              <Button asChild size="lg" className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/20 transition-colors duration-300 mb-6">
+                <Link to="/contact">Talk to Us</Link>
+              </Button>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>
