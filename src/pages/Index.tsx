@@ -4,6 +4,8 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import FooterCTA from "@/components/FooterCTA";
+import ParallaxPixels from "@/components/ParallaxPixels";
+import useScrollProgress from "@/hooks/useScrollProgress";
 
 const Index = () => {
   /* ── Transition 1: Section B climbs over sticky Hero ── */
