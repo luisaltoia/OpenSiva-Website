@@ -1,5 +1,5 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useMemo, useRef } from "react";
+import { motion, MotionValue, useTransform } from "framer-motion";
+import { useMemo } from "react";
 
 interface Dot {
   col: number;
@@ -22,13 +22,11 @@ const seeded = (seed: number) => {
   return x - Math.floor(x);
 };
 
-const ParallaxPixels = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
+interface Props {
+  scrollProgress: MotionValue<number>;
+}
 
+const ParallaxPixels = ({ scrollProgress }: Props) => {
   const dots = useMemo<Dot[]>(() => {
     const arr: Dot[] = [];
     const cols = Math.ceil(2000 / STEP);
@@ -38,25 +36,22 @@ const ParallaxPixels = () => {
       const wave = Math.sin(t * Math.PI * 4) * 1.5 + Math.sin(t * Math.PI * 9 + 1) * 0.8;
       const baseH = Math.round(BASE_HEIGHT + wave);
 
-      // Solid base dots — pitch white, no blinking
       for (let r = 0; r < baseH; r++) {
         arr.push({ col: c, row: r, isScatter: false });
       }
 
-      // Scatter dots above base — randomly solid or blinking for organic look
       for (let r = baseH; r < baseH + MAX_SCATTER; r++) {
         const distFromBase = r - baseH;
         const prob = 1 - distFromBase / MAX_SCATTER;
         const threshold = prob * prob * prob;
         if (seeded(c * 1000 + r * 7 + 3) < threshold) {
-          // ~60% of scatter dots are fully white (solid), rest can blink
           const isSolid = seeded(c * 333 + r * 17) < 0.6;
           const shouldBlink = !isSolid && seeded(c * 777 + r * 13) < 0.5;
           const s = seeded(c * 100 + r);
           arr.push({
             col: c,
             row: r,
-            isScatter: isSolid ? false : true, // solid ones behave like base
+            isScatter: !isSolid,
             blinkSeed: shouldBlink
               ? [0.5 + s * 0.5, 0.8 + seeded(c * 200 + r) * 0.2, 0.4 + seeded(c * 300 + r) * 0.4, 0.9, 0.5 + s * 0.5]
               : undefined,
@@ -69,37 +64,41 @@ const ParallaxPixels = () => {
     return arr;
   }, []);
 
+  // As user scrolls, the pixel area grows taller (more pixels revealed below)
+  const containerHeight = useTransform(scrollProgress, [0, 0.6], [TOTAL_HEIGHT * STEP, TOTAL_HEIGHT * STEP * 2.5]);
+
   return (
     <div
-      ref={ref}
       className="absolute top-0 left-0 right-0 overflow-hidden pointer-events-none"
       style={{ zIndex: 5, transform: "translateY(-100%)" }}
     >
-      <div className="relative w-full" style={{ height: TOTAL_HEIGHT * STEP }}>
+      <motion.div className="relative w-full" style={{ height: containerHeight }}>
         {dots.map((d, i) => (
-          <PixelDot key={i} dot={d} scrollYProgress={scrollYProgress} />
+          <PixelDot key={i} dot={d} scrollProgress={scrollProgress} />
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };
 
 const PixelDot = ({
   dot,
-  scrollYProgress,
+  scrollProgress,
 }: {
   dot: Dot;
-  scrollYProgress: ReturnType<typeof useScroll>["scrollYProgress"];
+  scrollProgress: MotionValue<number>;
 }) => {
   const left = dot.col * STEP;
   const bottom = dot.row * STEP;
 
-  // Scatter dots grow upward as user scrolls — they start hidden and appear
   const rowNorm = dot.isScatter ? dot.row / TOTAL_HEIGHT : 0;
-  const opacity = dot.isScatter
-    ? useTransform(scrollYProgress, [0.1, 0.3 + rowNorm * 0.4], [0, 1])
-    : undefined;
+  const scatterOpacity = useTransform(
+    scrollProgress,
+    [0.05, 0.2 + rowNorm * 0.3],
+    [0, 1]
+  );
 
+  // Blinking dots: only use animate, no scroll-driven opacity conflict
   if (dot.blinkSeed) {
     return (
       <motion.div
@@ -109,9 +108,8 @@ const PixelDot = ({
           height: DOT_SIZE,
           left,
           bottom,
-          opacity: opacity,
-          willChange: "opacity",
         }}
+        initial={{ opacity: 0 }}
         animate={{ opacity: dot.blinkSeed }}
         transition={{
           duration: dot.blinkDuration,
@@ -131,8 +129,7 @@ const PixelDot = ({
         height: DOT_SIZE,
         left,
         bottom,
-        opacity: dot.isScatter ? opacity : 1,
-        willChange: dot.isScatter ? "opacity" : undefined,
+        opacity: dot.isScatter ? scatterOpacity : 1,
       }}
     />
   );
