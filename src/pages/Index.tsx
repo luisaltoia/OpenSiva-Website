@@ -18,16 +18,7 @@ const Index = () => {
   const heroBlur = useTransform(heroP, [0.4, 1], [0, 10]);
   const heroOpacity = useTransform(heroP, [0.5, 0.85], [1, 0.3]);
 
-  /* ── Transition 2: Section C wipes over B with a clip reveal ── */
-  const clipWrapRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: clipP } = useScroll({
-    target: clipWrapRef,
-    offset: ["start end", "end end"],
-  });
-  // Clip from bottom edge upward: inset(bottom 0 0 0) → inset(0)
-  const clipInset = useTransform(clipP, [0, 1], [100, 0]);
-
-  /* ── Transition 3: Section D (The Line) fades/blurs through B's exit ── */
+  /* ── Transition: "The Line" section fades/blurs into focus ── */
   const lineRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: lineP } = useScroll({
     target: lineRef,
@@ -36,25 +27,6 @@ const Index = () => {
   const lineBlur = useTransform(lineP, [0, 0.6], [10, 0]);
   const lineOpacity = useTransform(lineP, [0, 0.5], [0, 1]);
   const lineScale = useTransform(lineP, [0, 1], [1.03, 1]);
-
-  /* ── Transition 4: Section E slides up over D with shadow ── */
-  const workWrapRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: workP } = useScroll({
-    target: workWrapRef,
-    offset: ["start end", "start 0.15"],
-  });
-  const workY = useTransform(workP, [0, 1], [200, 0]);
-  const workRoundness = useTransform(workP, [0, 0.8, 1], [24, 8, 0]);
-
-  /* ── Transition 5: Footer scales up from behind Section E ── */
-  const footerWrapRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: footerP } = useScroll({
-    target: footerWrapRef,
-    offset: ["start end", "start 0.3"],
-  });
-  const footerScale = useTransform(footerP, [0, 1], [0.88, 1]);
-  const footerBlur = useTransform(footerP, [0, 0.7], [8, 0]);
-  const footerOpacity = useTransform(footerP, [0, 0.5], [0, 1]);
 
   /* ── Staggered card reveals ── */
   const c1Ref = useRef<HTMLDivElement>(null);
