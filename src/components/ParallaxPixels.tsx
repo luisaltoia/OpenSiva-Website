@@ -43,18 +43,20 @@ const ParallaxPixels = () => {
         arr.push({ col: c, row: r, isScatter: false });
       }
 
-      // Scatter dots above base — most are white, a few blink
+      // Scatter dots above base — randomly solid or blinking for organic look
       for (let r = baseH; r < baseH + MAX_SCATTER; r++) {
         const distFromBase = r - baseH;
         const prob = 1 - distFromBase / MAX_SCATTER;
         const threshold = prob * prob * prob;
         if (seeded(c * 1000 + r * 7 + 3) < threshold) {
-          const shouldBlink = seeded(c * 777 + r * 13) < 0.25; // ~25% blink
+          // ~60% of scatter dots are fully white (solid), rest can blink
+          const isSolid = seeded(c * 333 + r * 17) < 0.6;
+          const shouldBlink = !isSolid && seeded(c * 777 + r * 13) < 0.5;
           const s = seeded(c * 100 + r);
           arr.push({
             col: c,
             row: r,
-            isScatter: true,
+            isScatter: isSolid ? false : true, // solid ones behave like base
             blinkSeed: shouldBlink
               ? [0.5 + s * 0.5, 0.8 + seeded(c * 200 + r) * 0.2, 0.4 + seeded(c * 300 + r) * 0.4, 0.9, 0.5 + s * 0.5]
               : undefined,
