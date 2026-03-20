@@ -109,7 +109,7 @@ const Index = () => {
       {/* ═══ SECTION B — What We Build — slides over the hero ═══ */}
       <section className="relative z-20 -mt-[100vh] bg-background py-32">
         {/* Dot silhouette at top of white section */}
-        <ParallaxPixels />
+        <ParallaxPixels scrollProgress={heroP} />
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
             <motion.h2
