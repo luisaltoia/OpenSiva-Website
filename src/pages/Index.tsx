@@ -99,7 +99,7 @@ const Index = () => {
               opacity: heroOpacity,
             }}
           >
-            <Hero scrollProgress={heroP} />
+            <Hero />
           </motion.div>
         </div>
       </div>
