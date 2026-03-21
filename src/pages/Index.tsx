@@ -161,7 +161,7 @@ const Index = () => {
       {/* ═══ THE LINE — blurs into sharp focus (faster) ═══ */}
       <motion.section
         ref={lineRef}
-        className="relative z-20 py-24 bg-background"
+        className="relative z-20 py-32 bg-background"
         style={{
           opacity: lineOpacity,
           scale: lineScale,
