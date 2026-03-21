@@ -77,7 +77,8 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
           const s = seeded(c * 150 + r);
           arr.push({
             col: c, row: r, tier: "sparkle",
-            sparkleSpeed: 5 + s * 5,
+            // Random total cycle: 8-14s per dot
+            sparkleSpeed: 8 + seeded(c * 1337 + r * 47) * 6,
             sparkleOffset: seeded(c * 3321 + r * 61) * Math.PI * 2,
           });
         } else {
