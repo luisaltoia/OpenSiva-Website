@@ -78,7 +78,7 @@ const Index = () => {
       </div>
 
       {/* ═══ SECTION B — What We Build — slides over the hero ═══ */}
-      <section className="relative z-20 -mt-[100vh] bg-background pt-16 pb-24">
+      <section className="relative z-20 -mt-[100vh] bg-background pt-32 pb-32">
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
             <motion.h2
@@ -112,7 +112,7 @@ const Index = () => {
 
       {/* ═══ PROOF BAR ═══ */}
       <motion.section
-        className="relative z-20 bg-background py-20"
+        className="relative z-20 bg-background py-32"
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
@@ -161,7 +161,7 @@ const Index = () => {
       {/* ═══ THE LINE — blurs into sharp focus (faster) ═══ */}
       <motion.section
         ref={lineRef}
-        className="relative z-20 py-24 bg-background"
+        className="relative z-20 py-32 bg-background"
         style={{
           opacity: lineOpacity,
           scale: lineScale,
@@ -184,7 +184,7 @@ const Index = () => {
         transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="container mx-auto px-6">
-          <div className="max-w-7xl mx-auto py-24">
+          <div className="max-w-7xl mx-auto py-32">
             <motion.h2
               className="text-4xl md:text-6xl font-light text-architectural mb-16"
               initial={{ opacity: 0, y: 20 }}
