@@ -6,7 +6,8 @@ interface Dot {
   row: number;
   isScatter: boolean;
   isWave?: boolean;
-  waveRow?: number; // normalized 0-1, how high in the wave zone
+  waveDelay?: number; // random per-dot delay for independent timing
+  waveRow?: number;
   blinkSeed?: number[];
   blinkDuration?: number;
   blinkDelay?: number;
@@ -18,8 +19,8 @@ const STEP = DOT_SIZE + GAP;
 const BASE_HEIGHT = 5;
 const MAX_SCATTER = 16;
 const TOTAL_HEIGHT = BASE_HEIGHT + MAX_SCATTER;
-const WAVE_ROWS = 35; // extra rows for the wave animation
-const CYCLE_DURATION = 6000; // 6 seconds full cycle
+const WAVE_ROWS = 25;
+const CYCLE_DURATION = 6000;
 
 const seeded = (seed: number) => {
   const x = Math.sin(seed * 9301 + 49297) * 49297;
@@ -31,19 +32,13 @@ interface Props {
 }
 
 const ParallaxPixels = ({ scrollProgress }: Props) => {
-  // Looping wave progress: 0→1→0 over CYCLE_DURATION
-  const waveProgress = useMotionValue(0);
+  const waveTime = useMotionValue(0);
   const startTime = useRef<number | null>(null);
 
   useAnimationFrame((time) => {
     if (startTime.current === null) startTime.current = time;
     const elapsed = (time - startTime.current) % CYCLE_DURATION;
-    const t = elapsed / CYCLE_DURATION;
-    // Triangle wave: 0→1 in first half, 1→0 in second half
-    const wave = t < 0.5 ? t * 2 : 2 - t * 2;
-    // Ease it for smoother feel
-    const eased = wave * wave * (3 - 2 * wave); // smoothstep
-    waveProgress.set(eased);
+    waveTime.set(elapsed / CYCLE_DURATION); // 0→1 repeating
   });
 
   const dots = useMemo<Dot[]>(() => {
@@ -55,7 +50,7 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
       const wave = Math.sin(t * Math.PI * 4) * 1.5 + Math.sin(t * Math.PI * 9 + 1) * 0.8;
       const baseH = Math.round(BASE_HEIGHT + wave);
 
-      // Base dots
+      // Base dots — static (with optional blink)
       for (let r = 0; r < baseH; r++) {
         const shouldBlink = seeded(c * 431 + r * 59) < 0.2;
         const s = seeded(c * 100 + r);
@@ -69,7 +64,7 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
         });
       }
 
-      // Scatter dots above base
+      // Scatter dots — static (with optional blink)
       for (let r = baseH; r < baseH + MAX_SCATTER; r++) {
         const distFromBase = r - baseH;
         const prob = 1 - distFromBase / MAX_SCATTER;
@@ -89,19 +84,21 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
         }
       }
 
-      // Wave dots — these animate up and down
+      // Wave dots — individually animated, appear above existing scatter
       const waveBase = baseH + MAX_SCATTER;
       for (let r = 0; r < WAVE_ROWS; r++) {
         const row = waveBase + r;
         const distNorm = r / WAVE_ROWS;
         const density = (1 - distNorm) * (1 - distNorm);
         if (seeded(c * 2000 + r * 13 + 7) < density) {
-          const isSolid = seeded(c * 444 + r * 23) < (0.7 - distNorm * 0.4);
-          const shouldBlink = !isSolid && seeded(c * 888 + r * 19) < 0.4;
+          // Each dot gets a unique random delay so they pop independently
+          const dotDelay = seeded(c * 3001 + r * 37);
+          const shouldBlink = seeded(c * 888 + r * 19) < 0.3;
           const s = seeded(c * 150 + r);
           arr.push({
-            col: c, row: row, isScatter: !isSolid, isWave: true,
+            col: c, row: row, isScatter: false, isWave: true,
             waveRow: distNorm,
+            waveDelay: dotDelay,
             blinkSeed: shouldBlink
               ? [0.5 + s * 0.5, 1, 0.2 + seeded(c * 250 + r) * 0.4, 0.9, 0.4 + s * 0.6]
               : undefined,
@@ -115,22 +112,17 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
   }, []);
 
   const maxRow = TOTAL_HEIGHT + WAVE_ROWS;
-  const containerHeight = useTransform(
-    scrollProgress,
-    [0, 0.6],
-    [maxRow * STEP, maxRow * STEP]
-  );
 
   return (
     <div
       className="absolute bottom-0 left-0 right-0 overflow-hidden pointer-events-none"
-      style={{ zIndex: 30 }}
+      style={{ zIndex: 30, height: maxRow * STEP }}
     >
-      <motion.div className="relative w-full" style={{ height: containerHeight }}>
+      <div className="relative w-full" style={{ height: maxRow * STEP }}>
         {dots.map((d, i) => (
-          <PixelDot key={i} dot={d} scrollProgress={scrollProgress} waveProgress={waveProgress} />
+          <PixelDot key={i} dot={d} scrollProgress={scrollProgress} waveTime={waveTime} />
         ))}
-      </motion.div>
+      </div>
     </div>
   );
 };
@@ -138,63 +130,48 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
 const PixelDot = ({
   dot,
   scrollProgress,
-  waveProgress,
+  waveTime,
 }: {
   dot: Dot;
   scrollProgress: MotionValue<number>;
-  waveProgress: MotionValue<number>;
+  waveTime: MotionValue<number>;
 }) => {
   const left = dot.col * STEP;
   const bottom = dot.row * STEP;
 
-  // Wave dots: visible only when waveProgress is high enough to reveal their row
-  // Lower wave rows appear first, higher ones need more progress
-  const waveOpacity = useTransform(
-    waveProgress,
-    [Math.max(0, (dot.waveRow ?? 0) - 0.15), dot.waveRow ?? 0],
-    [0, 1]
-  );
+  // Wave dots: each has its own phase based on row height + random delay
+  // They independently pop in and out
+  const waveOpacity = useTransform(waveTime, (t) => {
+    if (!dot.isWave) return 1;
+    const rowHeight = dot.waveRow ?? 0;
+    const delay = dot.waveDelay ?? 0;
+    
+    // Each dot has a personal phase offset
+    const phase = (t + delay) % 1;
+    
+    // Higher dots have a shorter visible window
+    const visibleWindow = 0.5 * (1 - rowHeight * 0.7);
+    const fadeIn = 0.08;
+    const fadeOut = 0.08;
+    
+    // Stagger: higher rows start appearing later in the cycle
+    const start = rowHeight * 0.4;
+    const adjustedPhase = (phase - start + 1) % 1;
+    
+    if (adjustedPhase < fadeIn) return adjustedPhase / fadeIn;
+    if (adjustedPhase < visibleWindow) return 1;
+    if (adjustedPhase < visibleWindow + fadeOut) return 1 - (adjustedPhase - visibleWindow) / fadeOut;
+    return 0;
+  });
 
-  const rowNorm = dot.isScatter && !dot.isWave ? dot.row / TOTAL_HEIGHT : 0;
+  const rowNorm = dot.isScatter ? dot.row / TOTAL_HEIGHT : 0;
   const scatterOpacity = useTransform(
     scrollProgress,
     [0.05, 0.2 + rowNorm * 0.3],
     [0, 1]
   );
 
-  const getOpacity = () => {
-    if (dot.isWave) return waveOpacity;
-    if (dot.isScatter) return scatterOpacity;
-    return 1;
-  };
-
-  if (dot.blinkSeed) {
-    if (dot.isWave) {
-      return (
-        <motion.div
-          className="absolute rounded-full bg-white"
-          style={{
-            width: DOT_SIZE,
-            height: DOT_SIZE,
-            left,
-            bottom,
-            opacity: waveOpacity,
-          }}
-        >
-          <motion.div
-            className="w-full h-full rounded-full bg-white"
-            animate={{ opacity: dot.blinkSeed }}
-            transition={{
-              duration: dot.blinkDuration,
-              delay: dot.blinkDelay,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </motion.div>
-      );
-    }
-
+  if (dot.blinkSeed && !dot.isWave) {
     return (
       <motion.div
         className="absolute rounded-full bg-white"
@@ -211,15 +188,40 @@ const PixelDot = ({
     );
   }
 
+  if (dot.isWave) {
+    if (dot.blinkSeed) {
+      return (
+        <motion.div
+          className="absolute rounded-full bg-white"
+          style={{ width: DOT_SIZE, height: DOT_SIZE, left, bottom, opacity: waveOpacity }}
+        >
+          <motion.div
+            className="w-full h-full rounded-full bg-white"
+            animate={{ opacity: dot.blinkSeed }}
+            transition={{
+              duration: dot.blinkDuration,
+              delay: dot.blinkDelay,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        </motion.div>
+      );
+    }
+    return (
+      <motion.div
+        className="absolute rounded-full bg-white"
+        style={{ width: DOT_SIZE, height: DOT_SIZE, left, bottom, opacity: waveOpacity }}
+      />
+    );
+  }
+
   return (
     <motion.div
       className="absolute rounded-full bg-white"
       style={{
-        width: DOT_SIZE,
-        height: DOT_SIZE,
-        left,
-        bottom,
-        opacity: getOpacity(),
+        width: DOT_SIZE, height: DOT_SIZE, left, bottom,
+        opacity: dot.isScatter ? scatterOpacity : 1,
       }}
     />
   );
