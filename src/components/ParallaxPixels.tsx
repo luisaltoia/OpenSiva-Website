@@ -74,7 +74,7 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
           if (seeded(c * 811 + r * 67) > keepChance) continue;
         }
 
-        const shouldBlink = seeded(c * 431 + r * 59) < 0.34;
+        const shouldBlink = seeded(c * 431 + r * 59) < 0.50;
         const s = seeded(c * 100 + r);
         arr.push({
           col: c, row: r, tier: "base",
