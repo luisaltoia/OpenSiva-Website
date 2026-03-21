@@ -156,7 +156,7 @@ const PixelDot = ({
 
   const layerOpacity =
     dot.tier === "scatter"
-      ? useTransform([scatterWaveOpacity, scatterScrollOpacity], ([a, b]) => a * b)
+      ? useTransform([scatterWaveOpacity, scatterScrollOpacity], ([a, b]) => Number(a) * Number(b))
       : 1;
 
   if (dot.blinkSeed) {
