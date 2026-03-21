@@ -78,11 +78,12 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
         const s = seeded(c * 100 + r);
         arr.push({
           col: c, row: r, tier: "base",
+          // Blink: fade in → hold bright for ~3s equiv → fade out → hold off
           blinkSeed: shouldBlink
-            ? [1, 0.15 + seeded(c * 211 + r) * 0.35, 1, 0.3 + seeded(c * 311 + r) * 0.35, 1]
+            ? [0, 0, 1, 1, 1, 1, 0, 0]
             : undefined,
-          blinkDuration: shouldBlink ? 2 + s * 5 : undefined,
-          blinkDelay: shouldBlink ? seeded(c * 611 + r) * 6 : undefined,
+          blinkDuration: shouldBlink ? 6 + s * 4 : undefined, // 6-10s total cycle, ~3s visible
+          blinkDelay: shouldBlink ? seeded(c * 611 + r) * 8 : undefined,
         });
       }
 
