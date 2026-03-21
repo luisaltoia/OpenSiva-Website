@@ -148,10 +148,10 @@ const PixelDot = ({
     const speed = dot.sparkleSpeed ?? 10;
     const offset = dot.sparkleOffset ?? 0;
     const phase = ((t / speed) + offset / (Math.PI * 2)) % 1; // 0–1 normalized
-    // 0–0.1: fade in, 0.1–0.5: hold at 1, 0.5–0.6: fade out, 0.6–1.0: hold at 0
-    if (phase < 0.1) return phase / 0.1;
-    if (phase < 0.5) return 1;
-    if (phase < 0.6) return 1 - (phase - 0.5) / 0.1;
+    // 0–0.08: fade in, 0.08–0.72: hold at 1 (~65%), 0.72–0.82: fade out, 0.82–1.0: hold at 0 (~18%)
+    if (phase < 0.08) return phase / 0.08;
+    if (phase < 0.72) return 1;
+    if (phase < 0.82) return 1 - (phase - 0.72) / 0.1;
     return 0;
   });
 
