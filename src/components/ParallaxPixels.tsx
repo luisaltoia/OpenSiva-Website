@@ -77,7 +77,8 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
           const s = seeded(c * 150 + r);
           arr.push({
             col: c, row: r, tier: "sparkle",
-            sparkleSpeed: 5 + s * 5,
+            // Random total cycle: 8-14s per dot
+            sparkleSpeed: 8 + seeded(c * 1337 + r * 47) * 6,
             sparkleOffset: seeded(c * 3321 + r * 61) * Math.PI * 2,
           });
         } else {
@@ -139,14 +140,17 @@ const PixelDot = ({
   const left = dot.col * STEP;
   const bottom = dot.row * STEP;
 
-  // Sparkle dots: smooth fade in/out using sin wave (no sharp cut)
+  // Sparkle: fade in (10%) → hold 100% for ~40% of cycle → fade out (10%) → hold 0% for ~40%
   const sparkleOpacity = useTransform(time, (t) => {
     if (dot.tier !== "sparkle") return 1;
-    const speed = dot.sparkleSpeed ?? 4;
+    const speed = dot.sparkleSpeed ?? 10;
     const offset = dot.sparkleOffset ?? 0;
-    const wave = Math.sin((t / speed) * Math.PI * 2 + offset);
-    // Smooth: map sin(-1..1) to opacity(0..1)
-    return Math.max(0, wave * 0.5 + 0.5);
+    const phase = ((t / speed) + offset / (Math.PI * 2)) % 1; // 0–1 normalized
+    // 0–0.1: fade in, 0.1–0.5: hold at 1, 0.5–0.6: fade out, 0.6–1.0: hold at 0
+    if (phase < 0.1) return phase / 0.1;
+    if (phase < 0.5) return 1;
+    if (phase < 0.6) return 1 - (phase - 0.5) / 0.1;
+    return 0;
   });
 
   const layerOpacity = dot.tier === "sparkle" ? sparkleOpacity : 1;
