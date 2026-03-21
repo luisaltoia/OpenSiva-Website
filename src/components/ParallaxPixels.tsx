@@ -65,27 +65,23 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
       const outlierMax2 = hasOutlier2 ? outlierMax + Math.round(1 + seeded(c * 6001) * 2) : outlierMax;
       const effectiveH = Math.min(outlierMax2, TOTAL_HEIGHT - 2); // cap below CTA
 
-      // Base dots — always solid, never blink (permanent silhouette)
+      // Base dots — all at 100% opacity, but 30% of them blink (fade in/out)
       for (let r = 0; r < effectiveH; r++) {
         if (r >= baseH) {
           const edgeDist = (r - baseH) / (effectiveH - baseH + 1);
           const keepChance = (1 - edgeDist) * (1 - edgeDist);
           if (seeded(c * 811 + r * 67) > keepChance) continue;
         }
-        arr.push({ col: c, row: r, tier: "base" });
-      }
-
-      // Blinker dots scattered throughout the base (bottom 50% and middle)
-      // These are EXTRA dots that fade in, hold ~3s, fade out — on top of the solid base
-      for (let r = 0; r < Math.min(baseH, effectiveH); r++) {
-        const shouldSparkle = seeded(c * 9911 + r * 37) < 0.35;
-        if (shouldSparkle) {
+        const shouldBlink = seeded(c * 9911 + r * 37) < 0.30;
+        if (shouldBlink) {
           const s = seeded(c * 150 + r);
           arr.push({
             col: c, row: r, tier: "sparkle",
-            sparkleSpeed: 5 + s * 5, // 5-10s cycle, ~3s visible
+            sparkleSpeed: 5 + s * 5,
             sparkleOffset: seeded(c * 3321 + r * 61) * Math.PI * 2,
           });
+        } else {
+          arr.push({ col: c, row: r, tier: "base" });
         }
       }
 
@@ -153,8 +149,7 @@ const PixelDot = ({
     return Math.max(0, wave * 0.5 + 0.5);
   });
 
-  // Base dots are slightly dimmer so sparkle blinkers flash visibly on top
-  const layerOpacity = dot.tier === "sparkle" ? sparkleOpacity : dot.tier === "base" ? 0.7 : 1;
+  const layerOpacity = dot.tier === "sparkle" ? sparkleOpacity : 1;
 
   if (dot.blinkSeed) {
     return (
