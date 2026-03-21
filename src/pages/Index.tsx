@@ -78,7 +78,7 @@ const Index = () => {
       </div>
 
       {/* ═══ SECTION B — What We Build — slides over the hero ═══ */}
-      <section className="relative z-20 -mt-[100vh] bg-background pt-16 pb-24">
+      <section className="relative z-20 -mt-[100vh] bg-background pt-32 pb-32">
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto">
             <motion.h2
