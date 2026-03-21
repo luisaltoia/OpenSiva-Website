@@ -65,16 +65,18 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
       const outlierMax2 = hasOutlier2 ? outlierMax + Math.round(1 + seeded(c * 6001) * 2) : outlierMax;
       const effectiveH = Math.min(outlierMax2, TOTAL_HEIGHT - 2); // cap below CTA
 
-      // Base dots — all at 100% opacity, but 30% of them blink (fade in/out)
+      // Base dots — 100% opacity, bottom half 20% blink, top half 30% blink
       for (let r = 0; r < effectiveH; r++) {
         if (r >= baseH) {
           const edgeDist = (r - baseH) / (effectiveH - baseH + 1);
           const keepChance = (1 - edgeDist) * (1 - edgeDist);
           if (seeded(c * 811 + r * 67) > keepChance) continue;
         }
-        const shouldBlink = seeded(c * 9911 + r * 37) < 0.30;
+        // Bottom half gets 20% blinkers, top half gets 30%
+        const midpoint = effectiveH / 2;
+        const blinkChance = r < midpoint ? 0.20 : 0.30;
+        const shouldBlink = seeded(c * 9911 + r * 37) < blinkChance;
         if (shouldBlink) {
-          const s = seeded(c * 150 + r);
           arr.push({
             col: c, row: r, tier: "sparkle",
             // Random total cycle: 8-14s per dot
