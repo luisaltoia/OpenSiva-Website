@@ -149,8 +149,7 @@ const PixelDot = ({
     return Math.max(0, wave * 0.5 + 0.5);
   });
 
-  // Base dots are slightly dimmer so sparkle blinkers flash visibly on top
-  const layerOpacity = dot.tier === "sparkle" ? sparkleOpacity : dot.tier === "base" ? 0.7 : 1;
+  const layerOpacity = dot.tier === "sparkle" ? sparkleOpacity : 1;
 
   if (dot.blinkSeed) {
     return (
