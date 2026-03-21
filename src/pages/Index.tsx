@@ -112,7 +112,7 @@ const Index = () => {
 
       {/* ═══ PROOF BAR ═══ */}
       <motion.section
-        className="relative z-20 bg-background py-20"
+        className="relative z-20 bg-background py-32"
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
