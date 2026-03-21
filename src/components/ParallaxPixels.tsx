@@ -140,14 +140,14 @@ const PixelDot = ({
   const left = dot.col * STEP;
   const bottom = dot.row * STEP;
 
-  // Sparkle dots: independent on/off using sin wave with sharp threshold
+  // Sparkle dots: smooth fade in/out using sin wave (no sharp cut)
   const sparkleOpacity = useTransform(time, (t) => {
     if (dot.tier !== "sparkle") return 1;
     const speed = dot.sparkleSpeed ?? 4;
     const offset = dot.sparkleOffset ?? 0;
     const wave = Math.sin((t / speed) * Math.PI * 2 + offset);
-    // Sharp on/off: visible when wave > 0.1
-    return wave > 0.1 ? 1 : 0;
+    // Smooth: map sin(-1..1) to opacity(0..1)
+    return Math.max(0, wave * 0.5 + 0.5);
   });
 
   const layerOpacity = dot.tier === "sparkle" ? sparkleOpacity : 1;
