@@ -50,12 +50,30 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
 
     for (let c = 0; c < cols; c++) {
       const t = c / cols;
+      // Multi-frequency jagged edge — creates irregular "branches" of varying height
       const wave =
-        Math.sin(t * Math.PI * 4) * 1.5 + Math.sin(t * Math.PI * 9 + 1) * 0.8;
-      const baseH = Math.round(BASE_HEIGHT + wave);
+        Math.sin(t * Math.PI * 4) * 1.5 +
+        Math.sin(t * Math.PI * 9 + 1) * 0.8 +
+        Math.sin(t * Math.PI * 23 + 3.7) * 1.2 + // high-freq jaggedness
+        (seeded(c * 7 + 13) - 0.5) * 3.5; // per-column random spikes
+      const baseH = Math.max(3, Math.round(BASE_HEIGHT + wave));
 
-      // Base dots — static silhouette, ~34% blink
-      for (let r = 0; r < baseH; r++) {
+      // Scattered outlier dots above the base edge (dissolving border like the reference)
+      const hasOutlier1 = seeded(c * 3001 + 7) < 0.3;
+      const hasOutlier2 = seeded(c * 4001 + 11) < 0.15;
+      const outlierMax = baseH + (hasOutlier1 ? Math.round(1 + seeded(c * 5001) * 3) : 0);
+      const outlierMax2 = hasOutlier2 ? outlierMax + Math.round(1 + seeded(c * 6001) * 2) : outlierMax;
+      const effectiveH = Math.min(outlierMax2, TOTAL_HEIGHT - 2); // cap below CTA
+
+      // Base dots — static silhouette with dissolving edge
+      for (let r = 0; r < effectiveH; r++) {
+        // Above baseH, dots become probabilistic (dissolving edge)
+        if (r >= baseH) {
+          const edgeDist = (r - baseH) / (effectiveH - baseH + 1);
+          const keepChance = (1 - edgeDist) * (1 - edgeDist);
+          if (seeded(c * 811 + r * 67) > keepChance) continue;
+        }
+
         const shouldBlink = seeded(c * 431 + r * 59) < 0.34;
         const s = seeded(c * 100 + r);
         arr.push({
