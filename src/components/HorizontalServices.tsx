@@ -23,11 +23,12 @@ const services = [
 ];
 
 const ITEM_WIDTH = 500;
-const GAP = 30;
-const SECTION_SCREENS = 6;
+const GAP = 32;
+const LOCK_HEIGHT_SCREENS = 8;
 
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
@@ -35,19 +36,24 @@ const HorizontalServices = () => {
 
   const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
 
-  // Keep horizontal movement active for almost the whole sticky duration
-  const x = useTransform(scrollYProgress, [0.08, 0.92], [0, -totalDistance]);
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.14], [1, 0]);
-  const titleScale = useTransform(scrollYProgress, [0, 0.14], [1, 0.96]);
-  const cardsOpacity = useTransform(scrollYProgress, [0.08, 0.2], [0, 1]);
+  // Title is centered immediately when section starts, then fades quickly.
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.1, 0.16], [1, 1, 0]);
+  const titleScale = useTransform(scrollYProgress, [0, 0.16], [1, 0.96]);
+
+  // Cards pop up right after the title phase.
+  const cardsOpacity = useTransform(scrollYProgress, [0.1, 0.18], [0, 1]);
+  const cardsY = useTransform(scrollYProgress, [0.1, 0.18], [80, 0]);
+
+  // Horizontal movement starts early and runs through almost all locked scroll.
+  const x = useTransform(scrollYProgress, [0.16, 0.94], [0, -totalDistance]);
 
   return (
-    <div
+    <section
       ref={containerRef}
       className="relative bg-background"
-      style={{ height: `${SECTION_SCREENS * 100}vh` }}
+      style={{ height: `${LOCK_HEIGHT_SCREENS * 100}vh` }}
     >
-      {/* Locked viewport: page scroll drives horizontal cards */}
+      {/* This sticky layer is the "screen lock" behavior from the reference */}
       <div className="sticky top-0 h-screen overflow-hidden">
         <motion.div
           className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none"
@@ -58,7 +64,7 @@ const HorizontalServices = () => {
           </h2>
         </motion.div>
 
-        <motion.div className="absolute inset-0 flex items-center" style={{ opacity: cardsOpacity }}>
+        <motion.div className="absolute inset-0 flex items-center" style={{ opacity: cardsOpacity, y: cardsY }}>
           <motion.div
             className="flex"
             style={{
@@ -71,32 +77,25 @@ const HorizontalServices = () => {
             {services.map((service) => (
               <article
                 key={service.id}
-                className="flex-shrink-0 h-[70vh] min-h-[450px] rounded-2xl bg-foreground text-background border border-background/10 overflow-hidden"
+                className="flex-shrink-0 h-[70vh] min-h-[460px] rounded-2xl bg-foreground text-background border border-background/10 overflow-hidden"
                 style={{ width: ITEM_WIDTH }}
               >
                 <div className="h-full flex flex-col justify-end p-8 md:p-10">
                   <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-4">
                     0{service.id}
                   </span>
-
                   <h3 className="text-3xl md:text-4xl font-light text-architectural mb-3 text-background">
                     {service.label}
                   </h3>
-
-                  <p className="text-lg font-light text-background/85 mb-3">
-                    {service.headline}
-                  </p>
-
-                  <p className="text-background/60 leading-relaxed text-sm">
-                    {service.body}
-                  </p>
+                  <p className="text-lg font-light text-background/85 mb-3">{service.headline}</p>
+                  <p className="text-background/60 leading-relaxed text-sm">{service.body}</p>
                 </div>
               </article>
             ))}
           </motion.div>
         </motion.div>
       </div>
-    </div>
+    </section>
   );
 };
 
