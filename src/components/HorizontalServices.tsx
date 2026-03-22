@@ -33,65 +33,68 @@ const HorizontalServices = () => {
   });
 
   const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
-  const x = useTransform(scrollYProgress, [0, 1], [0, -totalDistance]);
+  const x = useTransform(scrollYProgress, [0.25, 0.9], [0, -totalDistance]);
 
   return (
     <div
       ref={containerRef}
       className="relative"
-      style={{ height: `${(services.length + 1) * 100}vh` }}
+      style={{ height: `${(services.length + 2) * 100}vh` }}
     >
-      {/* Title — fades out as cards appear */}
-      <div className="sticky top-0 h-screen flex items-center justify-center z-10">
-        <motion.h2
-          className="text-4xl md:text-6xl font-light text-architectural text-center px-6"
-          style={{
-            opacity: useTransform(scrollYProgress, [0, 0.15], [1, 0]),
-            scale: useTransform(scrollYProgress, [0, 0.15], [1, 0.95]),
-          }}
-        >
-          Three ways to stop being the bottleneck.
-        </motion.h2>
-      </div>
+      <div className="sticky top-0 h-screen overflow-hidden">
+        {/* Title — visible first, fades as cards come in */}
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <motion.h2
+            className="text-4xl md:text-6xl font-light text-architectural text-center px-6"
+            style={{
+              opacity: useTransform(scrollYProgress, [0, 0.18], [1, 0]),
+              scale: useTransform(scrollYProgress, [0, 0.18], [1, 0.95]),
+            }}
+          >
+            Three ways to stop being the bottleneck.
+          </motion.h2>
+        </div>
 
-      {/* Cards — sticky horizontal gallery */}
-      <div
-        className="sticky top-0 h-screen flex items-center overflow-hidden"
-        style={{ marginTop: "-100vh" }}
-      >
-        <motion.div
-          className="flex"
-          style={{
-            x,
-            gap: GAP,
-            paddingLeft: "calc(50vw - 250px)", // center first card
-            opacity: useTransform(scrollYProgress, [0.08, 0.2], [0, 1]),
-          }}
-        >
-          {services.map((service) => (
-            <div
-              key={service.id}
-              className="flex-shrink-0 rounded-2xl border border-border bg-background relative overflow-hidden"
-              style={{ width: ITEM_WIDTH, height: "65vh", minHeight: 450 }}
-            >
-              {/* Content positioned at bottom */}
-              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-10">
-                <span className="inline-block bg-foreground text-background text-[10px] tracking-widest uppercase font-medium px-4 py-1.5 rounded-full mb-4">
-                  0{service.id}
-                </span>
-                <h3 className="text-2xl md:text-3xl font-light text-architectural mb-3">
-                  {service.label}
-                </h3>
-                <p className="text-lg font-light text-architectural mb-3">
-                  {service.headline}
-                </p>
-                <p className="text-muted-foreground leading-relaxed text-sm">
-                  {service.body}
-                </p>
+        {/* Cards gallery */}
+        <div className="absolute inset-0 flex items-center">
+          <motion.div
+            className="flex"
+            style={{
+              x,
+              gap: GAP,
+              paddingLeft: "calc(50vw - 250px)",
+              opacity: useTransform(scrollYProgress, [0.1, 0.25], [0, 1]),
+            }}
+          >
+            {services.map((service) => (
+              <div
+                key={service.id}
+                className="flex-shrink-0 rounded-2xl overflow-hidden"
+                style={{
+                  width: ITEM_WIDTH,
+                  height: "70vh",
+                  minHeight: 450,
+                  backgroundColor: "hsl(0 0% 5%)",
+                }}
+              >
+                <div className="relative h-full flex flex-col justify-end p-8 md:p-10">
+                  <span className="inline-block text-white/50 text-xs tracking-widest uppercase font-medium mb-4">
+                    0{service.id}
+                  </span>
+                  <h3 className="text-3xl md:text-4xl font-light text-white mb-3">
+                    {service.label}
+                  </h3>
+                  <p className="text-lg font-light text-white/80 mb-3">
+                    {service.headline}
+                  </p>
+                  <p className="text-white/50 leading-relaxed text-sm">
+                    {service.body}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </motion.div>
+            ))}
+          </motion.div>
+        </div>
       </div>
     </div>
   );
