@@ -1,24 +1,28 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { Cpu, Bot, Workflow } from "lucide-react";
 
 const services = [
   {
     id: 1,
-    label: "PRODUCTS",
+    label: "AI SYSTEMS",
     headline: "Your expertise becomes a product.",
     body: "We build AI platforms that take what your team knows and deliver it at scale. Your knowledge becomes a subscription product that works around the clock.",
+    icon: Cpu,
   },
   {
     id: 2,
     label: "AGENTS",
     headline: "Systems that act, not just answer.",
     body: "We build AI agents that execute workflows, route decisions, and operate within your rules. Not chatbots. Operating systems for your business.",
+    icon: Bot,
   },
   {
     id: 3,
     label: "AUTOMATION",
     headline: "Remove the manual. Keep the control.",
     body: "We automate business processes end to end. Data pipelines, approval workflows, reporting, integrations. What used to take a team now runs on infrastructure.",
+    icon: Workflow,
   },
 ];
 
@@ -31,47 +35,52 @@ const KEY_PROGRESS_STEP = 0.08;
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
-const getCardOpenness = (cardIndex: number, progress: number) => {
+const getActiveIndex = (progress: number) => {
   const cardProgress = clamp((progress - 0.16) / 0.84, 0, 1);
   const segments = services.length - 1;
-  const raw = cardProgress * segments;
-  const distance = Math.abs(raw - cardIndex);
-  return clamp(1 - distance, 0, 1);
+  return Math.round(cardProgress * segments);
 };
 
 const ServiceCard = ({
   service,
-  openness,
+  isActive,
 }: {
   service: (typeof services)[0];
-  openness: number;
+  isActive: boolean;
 }) => {
-  const width = COLLAPSED_WIDTH + (EXPANDED_WIDTH - COLLAPSED_WIDTH) * openness;
-  const isExpanded = openness > 0.5;
+  const Icon = service.icon;
 
   return (
     <motion.article
       className="flex-shrink-0 h-[50vh] min-h-[320px] max-h-[420px] rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
-      animate={{ width }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      animate={{ width: isActive ? EXPANDED_WIDTH : COLLAPSED_WIDTH }}
+      transition={{ type: "spring", stiffness: 400, damping: 35 }}
     >
-      <div className="h-full flex flex-col justify-end p-6 md:p-8 overflow-hidden">
-        <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3 whitespace-nowrap">
-          0{service.id}
-        </span>
-        <h3 className="font-light text-architectural text-background whitespace-nowrap overflow-hidden">
-          <span className={isExpanded ? "text-2xl md:text-3xl" : "text-lg"}>
-            {service.label}
+      <div className="h-full flex flex-col overflow-hidden">
+        {/* Icon at top */}
+        <div className="p-6 md:p-8 pb-0">
+          <Icon className="text-background/40" size={isActive ? 32 : 24} strokeWidth={1.5} />
+        </div>
+
+        {/* Content at bottom */}
+        <div className="mt-auto p-6 md:p-8 pt-0">
+          <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3 whitespace-nowrap">
+            0{service.id}
           </span>
-        </h3>
-        <motion.div
-          animate={{ opacity: isExpanded ? 1 : 0, height: isExpanded ? "auto" : 0 }}
-          transition={{ duration: 0.25 }}
-          className="overflow-hidden"
-        >
-          <p className="text-base font-light text-background/85 mb-2 mt-2">{service.headline}</p>
-          <p className="text-background/60 leading-relaxed text-sm">{service.body}</p>
-        </motion.div>
+          <h3 className={`font-light text-architectural text-background whitespace-nowrap overflow-hidden ${isActive ? "text-2xl md:text-3xl" : "text-lg"}`}>
+            {service.label}
+          </h3>
+          {isActive && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <p className="text-base font-light text-background/85 mb-2 mt-2">{service.headline}</p>
+              <p className="text-background/60 leading-relaxed text-sm">{service.body}</p>
+            </motion.div>
+          )}
+        </div>
       </div>
     </motion.article>
   );
@@ -84,7 +93,7 @@ const HorizontalServices = () => {
   const releaseCooldownUntilRef = useRef(0);
   const previousTopRef = useRef<number | null>(null);
   const [isLocked, setIsLocked] = useState(false);
-  const [currentProgress, setCurrentProgress] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const titleOpacity = useTransform(progress, [0, 0.08, 0.16], [1, 1, 0], { clamp: true });
   const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
@@ -94,7 +103,7 @@ const HorizontalServices = () => {
     const clamped = clamp(next, 0, 1);
     progressRef.current = clamped;
     progress.set(clamped);
-    setCurrentProgress(clamped);
+    setActiveIndex(getActiveIndex(clamped));
   };
 
   const releaseLock = (direction: "down" | "up") => {
@@ -232,7 +241,7 @@ const HorizontalServices = () => {
               <ServiceCard
                 key={service.id}
                 service={service}
-                openness={getCardOpenness(i, currentProgress)}
+                isActive={i === activeIndex}
               />
             ))}
           </div>
