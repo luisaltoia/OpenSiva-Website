@@ -1,5 +1,5 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion, useMotionValue, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 const services = [
   {
@@ -24,30 +24,147 @@ const services = [
 
 const ITEM_WIDTH = 500;
 const GAP = 32;
-const LOCK_HEIGHT_SCREENS = 6;
+const WHEEL_TO_FULL_PROGRESS = 2600;
+const KEY_PROGRESS_STEP = 0.08;
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
 const HorizontalServices = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
+  const containerRef = useRef<HTMLElement>(null);
+  const progress = useMotionValue(0);
+  const progressRef = useRef(0);
+  const releaseCooldownUntilRef = useRef(0);
+  const [isLocked, setIsLocked] = useState(false);
 
   const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
 
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.04, 0.08], [1, 1, 0], { clamp: true });
-  const titleScale = useTransform(scrollYProgress, [0, 0.08], [1, 0.97], { clamp: true });
-  const cardsOpacity = useTransform(scrollYProgress, [0.02, 0.06], [0, 1], { clamp: true });
-  const x = useTransform(scrollYProgress, [0.06, 0.9], [0, -totalDistance], { clamp: true });
+  const titleOpacity = useTransform(progress, [0, 0.08, 0.16], [1, 1, 0], { clamp: true });
+  const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
+  const cardsOpacity = useTransform(progress, [0.05, 0.18], [0, 1], { clamp: true });
+  const x = useTransform(progress, [0, 1], [0, -totalDistance], { clamp: true });
+
+  const setProgress = (next: number) => {
+    const clamped = clamp(next, 0, 1);
+    progressRef.current = clamped;
+    progress.set(clamped);
+  };
+
+  const releaseLock = (direction: "down" | "up") => {
+    setIsLocked(false);
+    releaseCooldownUntilRef.current = Date.now() + 250;
+
+    const sectionTop = containerRef.current?.offsetTop ?? window.scrollY;
+    const targetY =
+      direction === "down"
+        ? sectionTop + window.innerHeight + 4
+        : Math.max(0, sectionTop - window.innerHeight * 0.65);
+
+    window.scrollTo({ top: targetY, behavior: "auto" });
+  };
+
+  useEffect(() => {
+    const checkForLock = () => {
+      if (isLocked || Date.now() < releaseCooldownUntilRef.current) return;
+      const element = containerRef.current;
+      if (!element) return;
+
+      const rect = element.getBoundingClientRect();
+      const viewportCenter = window.innerHeight / 2;
+      const isCentered = rect.top <= viewportCenter && rect.bottom >= viewportCenter;
+
+      if (isCentered) {
+        setIsLocked(true);
+      }
+    };
+
+    window.addEventListener("scroll", checkForLock, { passive: true });
+    checkForLock();
+
+    return () => window.removeEventListener("scroll", checkForLock);
+  }, [isLocked]);
+
+  useEffect(() => {
+    if (!isLocked) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
+    const moveProgress = (delta: number) => {
+      const direction = Math.sign(delta);
+      const next = clamp(progressRef.current + delta / WHEEL_TO_FULL_PROGRESS, 0, 1);
+
+      if (next >= 1 && direction > 0) {
+        setProgress(1);
+        releaseLock("down");
+        return;
+      }
+
+      if (next <= 0 && direction < 0) {
+        setProgress(0);
+        releaseLock("up");
+        return;
+      }
+
+      setProgress(next);
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      moveProgress(event.deltaY);
+    };
+
+    let touchY = 0;
+    const onTouchStart = (event: TouchEvent) => {
+      touchY = event.touches[0]?.clientY ?? 0;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      event.preventDefault();
+      const currentY = event.touches[0]?.clientY ?? touchY;
+      const delta = (touchY - currentY) * 2;
+      touchY = currentY;
+      moveProgress(delta);
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const downKeys = ["ArrowDown", "PageDown", " "];
+      const upKeys = ["ArrowUp", "PageUp"];
+
+      if (downKeys.includes(event.key)) {
+        event.preventDefault();
+        moveProgress(WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
+      }
+
+      if (upKeys.includes(event.key)) {
+        event.preventDefault();
+        moveProgress(-WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
+      }
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isLocked]);
 
   return (
     <section
       ref={containerRef}
-      className="relative z-40 bg-background"
-      style={{ height: `${LOCK_HEIGHT_SCREENS * 100}vh` }}
+      className="relative z-40 min-h-screen bg-background"
     >
-      <div className="sticky top-0 z-40 h-screen overflow-hidden bg-background">
+      <div className="relative z-40 h-screen overflow-hidden bg-background">
         <motion.div
           className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none"
           style={{ opacity: titleOpacity, scale: titleScale }}
@@ -70,7 +187,7 @@ const HorizontalServices = () => {
             {services.map((service) => (
               <article
                 key={service.id}
-                className="flex-shrink-0 h-[70vh] min-h-[460px] rounded-2xl bg-foreground text-background border border-background/10 overflow-hidden"
+                className="flex-shrink-0 h-[70vh] min-h-[460px] rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
                 style={{ width: ITEM_WIDTH }}
               >
                 <div className="h-full flex flex-col justify-end p-8 md:p-10">
