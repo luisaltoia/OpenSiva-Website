@@ -11,10 +11,10 @@ interface Dot {
   col: number;
   row: number;
   tier: "base" | "sparkle";
+  isBottomHalf?: boolean;
   blinkSeed?: number[];
   blinkDuration?: number;
   blinkDelay?: number;
-  // sparkle-specific: each has its own random on/off cycle
   sparkleSpeed?: number;
   sparkleOffset?: number;
 }
