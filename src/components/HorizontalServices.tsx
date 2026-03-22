@@ -22,13 +22,60 @@ const services = [
   },
 ];
 
-const ITEM_WIDTH = 500;
-const GAP = 32;
+const EXPANDED_WIDTH = 520;
+const COLLAPSED_WIDTH = 160;
+const GAP = 16;
 const WHEEL_TO_FULL_PROGRESS = 2600;
 const KEY_PROGRESS_STEP = 0.08;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
+
+const getCardOpenness = (cardIndex: number, progress: number) => {
+  const cardProgress = clamp((progress - 0.16) / 0.84, 0, 1);
+  const segments = services.length - 1;
+  const raw = cardProgress * segments;
+  const distance = Math.abs(raw - cardIndex);
+  return clamp(1 - distance, 0, 1);
+};
+
+const ServiceCard = ({
+  service,
+  openness,
+}: {
+  service: (typeof services)[0];
+  openness: number;
+}) => {
+  const width = COLLAPSED_WIDTH + (EXPANDED_WIDTH - COLLAPSED_WIDTH) * openness;
+  const isExpanded = openness > 0.5;
+
+  return (
+    <motion.article
+      className="flex-shrink-0 h-[50vh] min-h-[320px] max-h-[420px] rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
+      animate={{ width }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
+      <div className="h-full flex flex-col justify-end p-6 md:p-8 overflow-hidden">
+        <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3 whitespace-nowrap">
+          0{service.id}
+        </span>
+        <h3 className="font-light text-architectural text-background whitespace-nowrap overflow-hidden">
+          <span className={isExpanded ? "text-2xl md:text-3xl" : "text-lg"}>
+            {service.label}
+          </span>
+        </h3>
+        <motion.div
+          animate={{ opacity: isExpanded ? 1 : 0, height: isExpanded ? "auto" : 0 }}
+          transition={{ duration: 0.25 }}
+          className="overflow-hidden"
+        >
+          <p className="text-base font-light text-background/85 mb-2 mt-2">{service.headline}</p>
+          <p className="text-background/60 leading-relaxed text-sm">{service.body}</p>
+        </motion.div>
+      </div>
+    </motion.article>
+  );
+};
 
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLElement>(null);
@@ -37,18 +84,17 @@ const HorizontalServices = () => {
   const releaseCooldownUntilRef = useRef(0);
   const previousTopRef = useRef<number | null>(null);
   const [isLocked, setIsLocked] = useState(false);
-
-  const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
+  const [currentProgress, setCurrentProgress] = useState(0);
 
   const titleOpacity = useTransform(progress, [0, 0.08, 0.16], [1, 1, 0], { clamp: true });
   const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
   const cardsOpacity = useTransform(progress, [0.05, 0.18], [0, 1], { clamp: true });
-  const x = useTransform(progress, [0, 1], [0, -totalDistance], { clamp: true });
 
   const setProgress = (next: number) => {
     const clamped = clamp(next, 0, 1);
     progressRef.current = clamped;
     progress.set(clamped);
+    setCurrentProgress(clamped);
   };
 
   const releaseLock = (direction: "down" | "up") => {
@@ -180,35 +226,16 @@ const HorizontalServices = () => {
           </h2>
         </motion.div>
 
-        <motion.div className="absolute inset-0 flex items-center" style={{ opacity: cardsOpacity }}>
-          <motion.div
-            className="flex"
-            style={{
-              x,
-              gap: GAP,
-              paddingLeft: "calc(50vw - 250px)",
-              paddingRight: "calc(50vw - 250px)",
-            }}
-          >
-            {services.map((service) => (
-              <article
+        <motion.div className="absolute inset-0 flex items-center justify-center" style={{ opacity: cardsOpacity }}>
+          <div className="flex" style={{ gap: GAP }}>
+            {services.map((service, i) => (
+              <ServiceCard
                 key={service.id}
-                className="flex-shrink-0 h-[50vh] min-h-[320px] max-h-[420px] rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
-                style={{ width: ITEM_WIDTH }}
-              >
-                <div className="h-full flex flex-col justify-end p-6 md:p-8">
-                  <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3">
-                    0{service.id}
-                  </span>
-                  <h3 className="text-2xl md:text-3xl font-light text-architectural mb-2 text-background">
-                    {service.label}
-                  </h3>
-                  <p className="text-base font-light text-background/85 mb-2">{service.headline}</p>
-                  <p className="text-background/60 leading-relaxed text-sm">{service.body}</p>
-                </div>
-              </article>
+                service={service}
+                openness={getCardOpenness(i, currentProgress)}
+              />
             ))}
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </section>
