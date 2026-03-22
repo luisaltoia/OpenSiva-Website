@@ -35,6 +35,7 @@ const HorizontalServices = () => {
   const progress = useMotionValue(0);
   const progressRef = useRef(0);
   const releaseCooldownUntilRef = useRef(0);
+  const previousTopRef = useRef<number | null>(null);
   const [isLocked, setIsLocked] = useState(false);
 
   const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
