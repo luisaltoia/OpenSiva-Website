@@ -24,7 +24,7 @@ const services = [
 
 const ITEM_WIDTH = 500;
 const GAP = 32;
-const LOCK_HEIGHT_SCREENS = 5;
+const LOCK_HEIGHT_SCREENS = 6;
 
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLDivElement>(null);
