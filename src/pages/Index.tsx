@@ -53,7 +53,7 @@ const Index = () => {
       </div>
 
       {/* ═══ SECTION B — Horizontal scroll services ═══ */}
-      <section className="relative z-40 -mt-[110vh] bg-background">
+      <section className="relative z-40 -mt-[20vh] bg-background">
         <HorizontalServices />
       </section>
 
