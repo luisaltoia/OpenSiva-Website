@@ -37,25 +37,6 @@ const Index = () => {
   const { scrollYProgress: c2p } = useScroll({ target: c2Ref, offset: ["start end", "start 0.55"] });
   const { scrollYProgress: c3p } = useScroll({ target: c3Ref, offset: ["start end", "start 0.55"] });
 
-  const blocks = [
-    {
-      label: "PRODUCTS",
-      headline: "Your expertise becomes a product.",
-      body: "We build AI platforms that take what your team knows and deliver it at scale. Your knowledge becomes a subscription product that works around the clock.",
-    },
-    {
-      label: "AGENTS",
-      headline: "Systems that act, not just answer.",
-      body: "We build AI agents that execute workflows, route decisions, and operate within your rules. Not chatbots. Operating systems for your business.",
-    },
-    {
-      label: "AUTOMATION",
-      headline: "Remove the manual. Keep the control.",
-      body: "We automate business processes end to end. Data pipelines, approval workflows, reporting, integrations. What used to take a team now runs on infrastructure.",
-    },
-  ];
-  const cardRefs = [c1Ref, c2Ref, c3Ref];
-  const cardProgresses = [c1p, c2p, c3p];
 
   useScrollProgress();
 
