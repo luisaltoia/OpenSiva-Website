@@ -8,9 +8,9 @@ const Navigation = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/80 backdrop-blur-md border-b border-white/5">
-      <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="container mx-auto px-6 py-1 flex items-center justify-between">
         <Link to="/" className="flex items-center">
-          <img src={neonLogo} alt="OpenSiva" className="h-[120px]" />
+          <img src={neonLogo} alt="OpenSiva" className="h-[80px]" />
         </Link>
 
         <div className="hidden md:flex items-center space-x-12">
@@ -26,7 +26,7 @@ const Navigation = () => {
         </div>
 
         <div className="hidden md:flex items-center">
-          <Button asChild size="sm" variant="outline" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
+          <Button asChild size="sm" className="bg-primary-foreground text-primary hover:bg-primary hover:text-primary-foreground border border-primary-foreground/20">
             <Link to="/contact">Talk to Us</Link>
           </Button>
         </div>
