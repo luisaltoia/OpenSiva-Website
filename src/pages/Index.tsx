@@ -29,13 +29,6 @@ const Index = () => {
   const lineOpacity = useTransform(lineP, [0, 0.5], [0, 1]);
   const lineScale = useTransform(lineP, [0, 1], [1.03, 1]);
 
-  /* ── Staggered card reveals ── */
-  const c1Ref = useRef<HTMLDivElement>(null);
-  const c2Ref = useRef<HTMLDivElement>(null);
-  const c3Ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: c1p } = useScroll({ target: c1Ref, offset: ["start end", "start 0.55"] });
-  const { scrollYProgress: c2p } = useScroll({ target: c2Ref, offset: ["start end", "start 0.55"] });
-  const { scrollYProgress: c3p } = useScroll({ target: c3Ref, offset: ["start end", "start 0.55"] });
 
 
   useScrollProgress();
