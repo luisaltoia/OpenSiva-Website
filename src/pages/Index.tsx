@@ -38,7 +38,7 @@ const Index = () => {
       <Navigation />
 
       {/* ═══ HERO — Stays sticky while Section B scrolls over it ═══ */}
-      <div ref={heroWrapRef} className="relative h-[200vh]">
+      <div ref={heroWrapRef} className="relative h-[120vh]">
         <div className="sticky top-0 h-screen z-10 overflow-hidden">
           <motion.div
             className="h-full"
@@ -53,7 +53,7 @@ const Index = () => {
       </div>
 
       {/* ═══ SECTION B — Horizontal scroll services ═══ */}
-      <section className="relative z-40 -mt-[100vh] bg-background">
+      <section className="relative z-40 -mt-[20vh] bg-background">
         <HorizontalServices />
       </section>
 

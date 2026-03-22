@@ -24,7 +24,7 @@ const services = [
 
 const ITEM_WIDTH = 500;
 const GAP = 32;
-const LOCK_HEIGHT_SCREENS = 5;
+const LOCK_HEIGHT_SCREENS = 6;
 
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -36,10 +36,10 @@ const HorizontalServices = () => {
 
   const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
 
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.08, 0.14], [1, 1, 0], { clamp: true });
-  const titleScale = useTransform(scrollYProgress, [0, 0.14], [1, 0.96], { clamp: true });
-  const cardsOpacity = useTransform(scrollYProgress, [0.04, 0.1], [0, 1], { clamp: true });
-  const x = useTransform(scrollYProgress, [0.1, 0.9], [0, -totalDistance], { clamp: true });
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.04, 0.08], [1, 1, 0], { clamp: true });
+  const titleScale = useTransform(scrollYProgress, [0, 0.08], [1, 0.97], { clamp: true });
+  const cardsOpacity = useTransform(scrollYProgress, [0.02, 0.06], [0, 1], { clamp: true });
+  const x = useTransform(scrollYProgress, [0.06, 0.9], [0, -totalDistance], { clamp: true });
 
   return (
     <section
