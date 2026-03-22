@@ -24,7 +24,7 @@ const services = [
 
 const ITEM_WIDTH = 500;
 const GAP = 32;
-const LOCK_HEIGHT_SCREENS = 8;
+const LOCK_HEIGHT_SCREENS = 5;
 
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -36,35 +36,28 @@ const HorizontalServices = () => {
 
   const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
 
-  // Title is centered immediately when section starts, then fades quickly.
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.1, 0.16], [1, 1, 0]);
-  const titleScale = useTransform(scrollYProgress, [0, 0.16], [1, 0.96]);
-
-  // Cards pop up right after the title phase.
-  const cardsOpacity = useTransform(scrollYProgress, [0.1, 0.18], [0, 1]);
-  const cardsY = useTransform(scrollYProgress, [0.1, 0.18], [80, 0]);
-
-  // Horizontal movement starts early and runs through almost all locked scroll.
-  const x = useTransform(scrollYProgress, [0.16, 0.94], [0, -totalDistance]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.08, 0.14], [1, 1, 0]);
+  const titleScale = useTransform(scrollYProgress, [0, 0.14], [1, 0.96]);
+  const cardsOpacity = useTransform(scrollYProgress, [0.06, 0.12], [0, 1]);
+  const x = useTransform(scrollYProgress, [0.12, 0.88], [0, -totalDistance]);
 
   return (
     <section
       ref={containerRef}
-      className="relative bg-background"
+      className="relative z-40 bg-background"
       style={{ height: `${LOCK_HEIGHT_SCREENS * 100}vh` }}
     >
-      {/* This sticky layer is the "screen lock" behavior from the reference */}
-      <div className="sticky top-0 h-screen overflow-hidden">
+      <div className="sticky top-0 z-40 h-screen overflow-hidden bg-background">
         <motion.div
           className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none"
           style={{ opacity: titleOpacity, scale: titleScale }}
         >
-          <h2 className="text-4xl md:text-6xl font-light text-architectural text-center">
+          <h2 className="text-4xl md:text-6xl font-light text-architectural text-center text-foreground">
             Three ways to stop being the bottleneck.
           </h2>
         </motion.div>
 
-        <motion.div className="absolute inset-0 flex items-center" style={{ opacity: cardsOpacity, y: cardsY }}>
+        <motion.div className="absolute inset-0 flex items-center" style={{ opacity: cardsOpacity }}>
           <motion.div
             className="flex"
             style={{
