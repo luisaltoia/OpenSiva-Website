@@ -74,6 +74,10 @@ const HorizontalServices = () => {
       const isCentered = rect.top <= viewportCenter && rect.bottom >= viewportCenter;
 
       if (isCentered) {
+        // Snap viewport so the section top aligns with screen top
+        const sectionTop = element.getBoundingClientRect().top + window.scrollY;
+        const snapY = sectionTop - (window.innerHeight - element.offsetHeight) / 2;
+        window.scrollTo({ top: snapY, behavior: "auto" });
         setIsLocked(true);
       }
     };
