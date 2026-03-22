@@ -24,6 +24,7 @@ const services = [
 
 const ITEM_WIDTH = 500;
 const GAP = 30;
+const SECTION_SCREENS = 6;
 
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,68 +34,67 @@ const HorizontalServices = () => {
   });
 
   const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
-  const x = useTransform(scrollYProgress, [0.25, 0.9], [0, -totalDistance]);
+
+  // Keep horizontal movement active for almost the whole sticky duration
+  const x = useTransform(scrollYProgress, [0.08, 0.92], [0, -totalDistance]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.14], [1, 0]);
+  const titleScale = useTransform(scrollYProgress, [0, 0.14], [1, 0.96]);
+  const cardsOpacity = useTransform(scrollYProgress, [0.08, 0.2], [0, 1]);
 
   return (
     <div
       ref={containerRef}
-      className="relative"
-      style={{ height: `${(services.length + 2) * 100}vh` }}
+      className="relative bg-background"
+      style={{ height: `${SECTION_SCREENS * 100}vh` }}
     >
+      {/* Locked viewport: page scroll drives horizontal cards */}
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* Title — visible first, fades as cards come in */}
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <motion.h2
-            className="text-4xl md:text-6xl font-light text-architectural text-center px-6"
-            style={{
-              opacity: useTransform(scrollYProgress, [0, 0.18], [1, 0]),
-              scale: useTransform(scrollYProgress, [0, 0.18], [1, 0.95]),
-            }}
-          >
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none"
+          style={{ opacity: titleOpacity, scale: titleScale }}
+        >
+          <h2 className="text-4xl md:text-6xl font-light text-architectural text-center">
             Three ways to stop being the bottleneck.
-          </motion.h2>
-        </div>
+          </h2>
+        </motion.div>
 
-        {/* Cards gallery */}
-        <div className="absolute inset-0 flex items-center">
+        <motion.div className="absolute inset-0 flex items-center" style={{ opacity: cardsOpacity }}>
           <motion.div
             className="flex"
             style={{
               x,
               gap: GAP,
               paddingLeft: "calc(50vw - 250px)",
-              opacity: useTransform(scrollYProgress, [0.1, 0.25], [0, 1]),
+              paddingRight: "calc(50vw - 250px)",
             }}
           >
             {services.map((service) => (
-              <div
+              <article
                 key={service.id}
-                className="flex-shrink-0 rounded-2xl overflow-hidden"
-                style={{
-                  width: ITEM_WIDTH,
-                  height: "70vh",
-                  minHeight: 450,
-                  backgroundColor: "hsl(0 0% 5%)",
-                }}
+                className="flex-shrink-0 h-[70vh] min-h-[450px] rounded-2xl bg-foreground text-background border border-background/10 overflow-hidden"
+                style={{ width: ITEM_WIDTH }}
               >
-                <div className="relative h-full flex flex-col justify-end p-8 md:p-10">
-                  <span className="inline-block text-white/50 text-xs tracking-widest uppercase font-medium mb-4">
+                <div className="h-full flex flex-col justify-end p-8 md:p-10">
+                  <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-4">
                     0{service.id}
                   </span>
-                  <h3 className="text-3xl md:text-4xl font-light text-white mb-3">
+
+                  <h3 className="text-3xl md:text-4xl font-light text-architectural mb-3 text-background">
                     {service.label}
                   </h3>
-                  <p className="text-lg font-light text-white/80 mb-3">
+
+                  <p className="text-lg font-light text-background/85 mb-3">
                     {service.headline}
                   </p>
-                  <p className="text-white/50 leading-relaxed text-sm">
+
+                  <p className="text-background/60 leading-relaxed text-sm">
                     {service.body}
                   </p>
                 </div>
-              </div>
+              </article>
             ))}
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
