@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import FooterCTA from "@/components/FooterCTA";
 import ParallaxPixels from "@/components/ParallaxPixels";
+import HorizontalServices from "@/components/HorizontalServices";
 import useScrollProgress from "@/hooks/useScrollProgress";
 
 const Index = () => {
@@ -28,33 +29,7 @@ const Index = () => {
   const lineOpacity = useTransform(lineP, [0, 0.5], [0, 1]);
   const lineScale = useTransform(lineP, [0, 1], [1.03, 1]);
 
-  /* ── Staggered card reveals ── */
-  const c1Ref = useRef<HTMLDivElement>(null);
-  const c2Ref = useRef<HTMLDivElement>(null);
-  const c3Ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: c1p } = useScroll({ target: c1Ref, offset: ["start end", "start 0.55"] });
-  const { scrollYProgress: c2p } = useScroll({ target: c2Ref, offset: ["start end", "start 0.55"] });
-  const { scrollYProgress: c3p } = useScroll({ target: c3Ref, offset: ["start end", "start 0.55"] });
 
-  const blocks = [
-    {
-      label: "PRODUCTS",
-      headline: "Your expertise becomes a product.",
-      body: "We build AI platforms that take what your team knows and deliver it at scale. Your knowledge becomes a subscription product that works around the clock.",
-    },
-    {
-      label: "AGENTS",
-      headline: "Systems that act, not just answer.",
-      body: "We build AI agents that execute workflows, route decisions, and operate within your rules. Not chatbots. Operating systems for your business.",
-    },
-    {
-      label: "AUTOMATION",
-      headline: "Remove the manual. Keep the control.",
-      body: "We automate business processes end to end. Data pipelines, approval workflows, reporting, integrations. What used to take a team now runs on infrastructure.",
-    },
-  ];
-  const cardRefs = [c1Ref, c2Ref, c3Ref];
-  const cardProgresses = [c1p, c2p, c3p];
 
   useScrollProgress();
 
@@ -77,37 +52,9 @@ const Index = () => {
         </div>
       </div>
 
-      {/* ═══ SECTION B — What We Build — slides over the hero ═══ */}
-      <section className="relative z-20 -mt-[100vh] bg-background pt-32 pb-32">
-        <div className="container mx-auto px-6">
-          <div className="max-w-7xl mx-auto">
-            <motion.h2
-              className="text-4xl md:text-6xl font-light text-architectural mb-20"
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            >
-              Three ways to stop being the bottleneck.
-            </motion.h2>
-            <div className="grid md:grid-cols-3 gap-16">
-              {blocks.map((block, i) => (
-                <motion.div
-                  key={i}
-                  ref={cardRefs[i]}
-                  style={{
-                    y: useTransform(cardProgresses[i], [0, 1], [50, 0]),
-                    opacity: useTransform(cardProgresses[i], [0, 0.6], [0, 1]),
-                  }}
-                >
-                  <span className="inline-block bg-foreground text-background text-[10px] tracking-widest uppercase font-medium px-4 py-1.5 rounded-full mb-4">{block.label}</span>
-                  <h3 className="text-2xl font-light text-architectural mb-4">{block.headline}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{block.body}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* ═══ SECTION B — Horizontal scroll services ═══ */}
+      <section className="relative z-20 -mt-[100vh] bg-background">
+        <HorizontalServices />
       </section>
 
       {/* ═══ PROOF BAR ═══ */}

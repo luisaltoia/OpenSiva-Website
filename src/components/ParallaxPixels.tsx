@@ -11,10 +11,10 @@ interface Dot {
   col: number;
   row: number;
   tier: "base" | "sparkle";
+  isBottomHalf?: boolean;
   blinkSeed?: number[];
   blinkDuration?: number;
   blinkDelay?: number;
-  // sparkle-specific: each has its own random on/off cycle
   sparkleSpeed?: number;
   sparkleOffset?: number;
 }
@@ -79,7 +79,7 @@ const ParallaxPixels = ({ scrollProgress }: Props) => {
         if (shouldBlink) {
           arr.push({
             col: c, row: r, tier: "sparkle",
-            // Random total cycle: 8-14s per dot
+            isBottomHalf: r < midpoint,
             sparkleSpeed: 8 + seeded(c * 1337 + r * 47) * 6,
             sparkleOffset: seeded(c * 3321 + r * 61) * Math.PI * 2,
           });
@@ -142,13 +142,20 @@ const PixelDot = ({
   const left = dot.col * STEP;
   const bottom = dot.row * STEP;
 
-  // Sparkle: fade in (10%) → hold 100% for ~40% of cycle → fade out (10%) → hold 0% for ~40%
+  // Bottom half: shorter invisible time (~9% off vs ~18% for top)
   const sparkleOpacity = useTransform(time, (t) => {
     if (dot.tier !== "sparkle") return 1;
     const speed = dot.sparkleSpeed ?? 10;
     const offset = dot.sparkleOffset ?? 0;
-    const phase = ((t / speed) + offset / (Math.PI * 2)) % 1; // 0–1 normalized
-    // 0–0.08: fade in, 0.08–0.72: hold at 1 (~65%), 0.72–0.82: fade out, 0.82–1.0: hold at 0 (~18%)
+    const phase = ((t / speed) + offset / (Math.PI * 2)) % 1;
+    if (dot.isBottomHalf) {
+      // Bottom: 0–0.07 fade in, 0.07–0.80 hold, 0.80–0.90 fade out, 0.90–1.0 off (~10%)
+      if (phase < 0.07) return phase / 0.07;
+      if (phase < 0.80) return 1;
+      if (phase < 0.90) return 1 - (phase - 0.80) / 0.10;
+      return 0;
+    }
+    // Top: 0–0.08 fade in, 0.08–0.72 hold, 0.72–0.82 fade out, 0.82–1.0 off (~18%)
     if (phase < 0.08) return phase / 0.08;
     if (phase < 0.72) return 1;
     if (phase < 0.82) return 1 - (phase - 0.72) / 0.1;
