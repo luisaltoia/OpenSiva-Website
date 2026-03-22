@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
 import FooterCTA from "@/components/FooterCTA";
 import ParallaxPixels from "@/components/ParallaxPixels";
+import HorizontalServices from "@/components/HorizontalServices";
 import useScrollProgress from "@/hooks/useScrollProgress";
 
 const Index = () => {
