@@ -193,17 +193,17 @@ const HorizontalServices = () => {
             {services.map((service) => (
               <article
                 key={service.id}
-                className="flex-shrink-0 h-[70vh] min-h-[460px] rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
+                className="flex-shrink-0 h-[50vh] min-h-[320px] max-h-[420px] rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
                 style={{ width: ITEM_WIDTH }}
               >
-                <div className="h-full flex flex-col justify-end p-8 md:p-10">
-                  <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-4">
+                <div className="h-full flex flex-col justify-end p-6 md:p-8">
+                  <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3">
                     0{service.id}
                   </span>
-                  <h3 className="text-3xl md:text-4xl font-light text-architectural mb-3 text-background">
+                  <h3 className="text-2xl md:text-3xl font-light text-architectural mb-2 text-background">
                     {service.label}
                   </h3>
-                  <p className="text-lg font-light text-background/85 mb-3">{service.headline}</p>
+                  <p className="text-base font-light text-background/85 mb-2">{service.headline}</p>
                   <p className="text-background/60 leading-relaxed text-sm">{service.body}</p>
                 </div>
               </article>
