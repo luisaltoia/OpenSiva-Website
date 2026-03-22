@@ -35,6 +35,7 @@ const HorizontalServices = () => {
   const progress = useMotionValue(0);
   const progressRef = useRef(0);
   const releaseCooldownUntilRef = useRef(0);
+  const previousTopRef = useRef<number | null>(null);
   const [isLocked, setIsLocked] = useState(false);
 
   const totalDistance = (services.length - 1) * (ITEM_WIDTH + GAP);
@@ -70,16 +71,17 @@ const HorizontalServices = () => {
       if (!element) return;
 
       const rect = element.getBoundingClientRect();
-      const viewportCenter = window.innerHeight / 2;
-      const isCentered = rect.top <= viewportCenter && rect.bottom >= viewportCenter;
+      const previousTop = previousTopRef.current ?? rect.top;
+      previousTopRef.current = rect.top;
 
-      if (isCentered) {
-        // Snap viewport so the section top aligns with screen top
-        const sectionTop = element.getBoundingClientRect().top + window.scrollY;
-        const snapY = sectionTop - (window.innerHeight - element.offsetHeight) / 2;
-        window.scrollTo({ top: snapY, behavior: "auto" });
-        setIsLocked(true);
-      }
+      const crossedLockLineWhileScrollingDown = previousTop > 0 && rect.top <= 0;
+      const crossedLockLineWhileScrollingUp = previousTop < 0 && rect.top >= 0;
+
+      if (!crossedLockLineWhileScrollingDown && !crossedLockLineWhileScrollingUp) return;
+
+      const sectionTop = rect.top + window.scrollY;
+      window.scrollTo({ top: sectionTop, behavior: "auto" });
+      setIsLocked(true);
     };
 
     window.addEventListener("scroll", checkForLock, { passive: true });
