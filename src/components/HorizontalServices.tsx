@@ -59,7 +59,11 @@ const ServiceCard = ({
       <div className="h-full flex flex-col overflow-hidden">
         {/* Icon at top */}
         <div className="p-6 md:p-8 pb-0">
-          <Icon className="text-background/40" size={isActive ? 32 : 24} strokeWidth={1.5} />
+          <Icon
+            className="text-background drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+            size={isActive ? 32 : 24}
+            strokeWidth={1.5}
+          />
         </div>
 
         {/* Content at bottom */}
