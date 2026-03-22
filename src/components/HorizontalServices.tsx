@@ -71,7 +71,7 @@ const ServiceCard = ({
           <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3 whitespace-nowrap">
             0{service.id}
           </span>
-          <h3 className={`font-light text-architectural text-background whitespace-nowrap overflow-hidden ${isActive ? "text-2xl md:text-3xl" : "text-lg"}`}>
+        <h3 className={`font-light text-architectural text-background ${isActive ? "text-2xl md:text-3xl" : "text-sm"}`}>
             {service.label}
           </h3>
           {isActive && (
