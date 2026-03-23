@@ -148,17 +148,16 @@ const PixelDot = ({
     const speed = dot.sparkleSpeed ?? 10;
     const offset = dot.sparkleOffset ?? 0;
     const phase = ((t / speed) + offset / (Math.PI * 2)) % 1;
-    if (dot.isBottomHalf) {
-      // Bottom: 0–0.07 fade in, 0.07–0.80 hold, 0.80–0.90 fade out, 0.90–1.0 off (~10%)
-      if (phase < 0.07) return phase / 0.07;
-      if (phase < 0.80) return 1;
-      if (phase < 0.90) return 1 - (phase - 0.80) / 0.10;
-      return 0;
-    }
-    // Top: 0–0.08 fade in, 0.08–0.72 hold, 0.72–0.82 fade out, 0.82–1.0 off (~18%)
-    if (phase < 0.08) return phase / 0.08;
-    if (phase < 0.72) return 1;
-    if (phase < 0.82) return 1 - (phase - 0.72) / 0.1;
+    // Fixed 2s invisible time regardless of cycle length
+    const offFraction = Math.min(2 / speed, 0.25); // cap at 25% off
+    const fadeFraction = offFraction * 0.4; // fade takes 40% of off-time
+    const onEnd = 1 - offFraction;
+    const fadeOutEnd = onEnd + fadeFraction;
+    const fadeInEnd = fadeFraction;
+
+    if (phase < fadeInEnd) return phase / fadeInEnd;
+    if (phase < onEnd) return 1;
+    if (phase < fadeOutEnd) return 1 - (phase - onEnd) / fadeFraction;
     return 0;
   });
 
