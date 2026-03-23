@@ -100,6 +100,11 @@ const HorizontalServices = () => {
   const releaseCooldownUntilRef = useRef(0);
   const previousTopRef = useRef<number | null>(null);
   const isLockedRef = useRef(false);
+  const lockArmedRef = useRef(true);
+  const lockAnchorYRef = useRef<number | null>(null);
+  const pendingReleaseDirectionRef = useRef<"down" | "up" | null>(null);
+  const lastInputDirectionRef = useRef(0);
+  const lastInputTsRef = useRef(0);
   const [isLocked, setIsLocked] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -115,31 +120,48 @@ const HorizontalServices = () => {
   };
 
   const lock = (entryDirection: "down" | "up") => {
-    if (entryDirection === "down") {
-      setProgressValue(0);
-    } else {
-      setProgressValue(1);
-    }
+    const sectionTop = containerRef.current?.offsetTop ?? window.scrollY;
+    lockAnchorYRef.current = sectionTop;
+    window.scrollTo({ top: sectionTop + LOCK_LINE, behavior: "auto" });
+
+    // Start from logical edge based on entry direction
+    setProgressValue(entryDirection === "down" ? 0 : 1);
     isLockedRef.current = true;
+    lockArmedRef.current = false;
     setIsLocked(true);
   };
 
   const releaseLock = (direction: "down" | "up") => {
     isLockedRef.current = false;
     setIsLocked(false);
-    releaseCooldownUntilRef.current = Date.now() + 700;
+    pendingReleaseDirectionRef.current = direction;
+    releaseCooldownUntilRef.current = Date.now() + 900;
     previousTopRef.current = null;
+    lockAnchorYRef.current = null;
+    lastInputDirectionRef.current = 0;
+    lastInputTsRef.current = 0;
+  };
+
+  // Run release scroll after body overflow is restored (prevents re-lock/reset jitter)
+  useEffect(() => {
+    if (isLocked) return;
+    const direction = pendingReleaseDirectionRef.current;
+    if (!direction) return;
+
+    pendingReleaseDirectionRef.current = null;
 
     const sectionTop = containerRef.current?.offsetTop ?? window.scrollY;
     const targetY =
       direction === "down"
-        ? sectionTop + window.innerHeight + 4
+        ? sectionTop + window.innerHeight + LOCK_RELEASE_BUFFER
         : Math.max(0, sectionTop - window.innerHeight * 0.65);
 
-    window.scrollTo({ top: targetY, behavior: "smooth" });
-  };
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: targetY, behavior: "smooth" });
+    });
+  }, [isLocked]);
 
-  // Lock only when crossing the lock threshold (prevents random re-lock resets)
+  // Lock only on real threshold crossing, and only when lock has been re-armed
   useEffect(() => {
     const checkForLock = () => {
       const el = containerRef.current;
@@ -150,20 +172,26 @@ const HorizontalServices = () => {
       const previousTop = previousTopRef.current ?? currentTop;
       previousTopRef.current = currentTop;
 
+      if (!lockArmedRef.current) {
+        const movedFarBelow = currentTop > LOCK_REARM_DISTANCE;
+        const movedFarAbove = rect.bottom < window.innerHeight - LOCK_REARM_DISTANCE;
+        if (movedFarBelow || movedFarAbove) {
+          lockArmedRef.current = true;
+        }
+      }
+
+      if (!lockArmedRef.current) return;
       if (isLockedRef.current || Date.now() < releaseCooldownUntilRef.current) return;
 
       const crossedDown = previousTop > LOCK_LINE && currentTop <= LOCK_LINE;
       const crossedUp = previousTop < LOCK_LINE && currentTop >= LOCK_LINE;
-
       if (!crossedDown && !crossedUp) return;
 
-      window.scrollTo({ top: el.offsetTop + LOCK_LINE, behavior: "auto" });
       lock(crossedDown ? "down" : "up");
     };
 
     previousTopRef.current = containerRef.current?.getBoundingClientRect().top ?? null;
     window.addEventListener("scroll", checkForLock, { passive: true });
-
     return () => window.removeEventListener("scroll", checkForLock);
   }, []);
 
@@ -177,18 +205,32 @@ const HorizontalServices = () => {
     document.body.style.touchAction = "none";
 
     const moveProgress = (rawDelta: number) => {
+      if (!rawDelta) return;
+
+      const now = performance.now();
       const delta = clamp(rawDelta, -MAX_WHEEL_DELTA, MAX_WHEEL_DELTA);
-      const dir = Math.sign(delta);
-      if (!dir) return;
+      const direction = Math.sign(delta);
+
+      const isOppositeMomentum =
+        lastInputDirectionRef.current !== 0 &&
+        direction !== lastInputDirectionRef.current &&
+        now - lastInputTsRef.current < OPPOSITE_DIRECTION_IGNORE_MS &&
+        Math.abs(delta) < OPPOSITE_DIRECTION_IGNORE_DELTA;
+
+      if (isOppositeMomentum) return;
+
+      lastInputDirectionRef.current = direction;
+      lastInputTsRef.current = now;
 
       const next = clamp(progressRef.current + delta / WHEEL_TO_FULL_PROGRESS, 0, 1);
 
-      if (next >= 1 && dir > 0) {
+      if (next >= 1 && direction > 0) {
         setProgressValue(1);
         releaseLock("down");
         return;
       }
-      if (next <= 0 && dir < 0) {
+
+      if (next <= 0 && direction < 0) {
         setProgressValue(0);
         releaseLock("up");
         return;
@@ -199,6 +241,12 @@ const HorizontalServices = () => {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+
+      const anchorY = lockAnchorYRef.current;
+      if (anchorY !== null && Math.abs(window.scrollY - anchorY) > 1) {
+        window.scrollTo({ top: anchorY, behavior: "auto" });
+      }
+
       moveProgress(e.deltaY);
     };
 
