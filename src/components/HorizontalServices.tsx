@@ -112,6 +112,12 @@ const HorizontalServices = () => {
   const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
   const cardsOpacity = useTransform(progress, [0.05, 0.18], [0, 1], { clamp: true });
 
+  const getSectionTop = () => {
+    const el = containerRef.current;
+    if (!el) return window.scrollY;
+    return window.scrollY + el.getBoundingClientRect().top;
+  };
+
   const setProgressValue = (next: number) => {
     const clamped = clamp(next, 0, 1);
     progressRef.current = clamped;
@@ -120,7 +126,7 @@ const HorizontalServices = () => {
   };
 
   const lock = (entryDirection: "down" | "up") => {
-    const sectionTop = containerRef.current?.offsetTop ?? window.scrollY;
+    const sectionTop = getSectionTop();
     lockAnchorYRef.current = sectionTop;
     window.scrollTo({ top: sectionTop + LOCK_LINE, behavior: "auto" });
 
@@ -150,7 +156,7 @@ const HorizontalServices = () => {
 
     pendingReleaseDirectionRef.current = null;
 
-    const sectionTop = containerRef.current?.offsetTop ?? window.scrollY;
+    const sectionTop = getSectionTop();
     const targetY =
       direction === "down"
         ? sectionTop + window.innerHeight + LOCK_RELEASE_BUFFER
