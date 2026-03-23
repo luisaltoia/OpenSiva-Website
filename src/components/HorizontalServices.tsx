@@ -29,9 +29,8 @@ const services = [
 const EXPANDED_WIDTH = 520;
 const COLLAPSED_WIDTH = 160;
 const GAP = 16;
-const WHEEL_TO_FULL_PROGRESS = 3200;
+const WHEEL_TO_FULL_PROGRESS = 3000;
 const KEY_PROGRESS_STEP = 0.08;
-const LERP_SPEED = 0.12;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -58,7 +57,6 @@ const ServiceCard = ({
       transition={{ type: "spring", stiffness: 400, damping: 35 }}
     >
       <div className="h-full flex flex-col overflow-hidden">
-        {/* Icon at top */}
         <div className="p-6 md:p-8 pb-0">
           <Icon
             className="text-background drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
@@ -66,13 +64,11 @@ const ServiceCard = ({
             strokeWidth={1.5}
           />
         </div>
-
-        {/* Content at bottom */}
         <div className="mt-auto p-6 md:p-8 pt-0">
           <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3 whitespace-nowrap">
             0{service.id}
           </span>
-        <h3 className={`font-light text-architectural text-background ${isActive ? "text-2xl md:text-3xl" : "text-sm"}`}>
+          <h3 className={`font-light text-architectural text-background ${isActive ? "text-2xl md:text-3xl" : "text-sm"}`}>
             {service.label}
           </h3>
           {isActive && (
@@ -95,26 +91,31 @@ const HorizontalServices = () => {
   const containerRef = useRef<HTMLElement>(null);
   const progress = useMotionValue(0);
   const progressRef = useRef(0);
-  const targetProgressRef = useRef(0);
   const releaseCooldownUntilRef = useRef(0);
+  const isLockedRef = useRef(false);
   const [isLocked, setIsLocked] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const rafRef = useRef<number>(0);
 
   const titleOpacity = useTransform(progress, [0, 0.08, 0.16], [1, 1, 0], { clamp: true });
   const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
   const cardsOpacity = useTransform(progress, [0.05, 0.18], [0, 1], { clamp: true });
 
-  const applyProgress = (value: number) => {
-    const clamped = clamp(value, 0, 1);
+  const setProgressValue = (next: number) => {
+    const clamped = clamp(next, 0, 1);
     progressRef.current = clamped;
     progress.set(clamped);
     setActiveIndex(getActiveIndex(clamped));
   };
 
+  const lock = () => {
+    isLockedRef.current = true;
+    setIsLocked(true);
+  };
+
   const releaseLock = (direction: "down" | "up") => {
+    isLockedRef.current = false;
     setIsLocked(false);
-    releaseCooldownUntilRef.current = Date.now() + 400;
+    releaseCooldownUntilRef.current = Date.now() + 350;
 
     const sectionTop = containerRef.current?.offsetTop ?? window.scrollY;
     const targetY =
@@ -125,115 +126,75 @@ const HorizontalServices = () => {
     window.scrollTo({ top: targetY, behavior: "smooth" });
   };
 
-  // Lerp animation loop — smoothly interpolates progress toward target
-  useEffect(() => {
-    if (!isLocked) return;
-
-    const animate = () => {
-      const current = progressRef.current;
-      const target = targetProgressRef.current;
-      const diff = target - current;
-
-      if (Math.abs(diff) > 0.001) {
-        applyProgress(current + diff * LERP_SPEED);
-      } else if (current !== target) {
-        applyProgress(target);
-      }
-
-      rafRef.current = requestAnimationFrame(animate);
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [isLocked]);
-
-  // Lock detection on scroll
+  // Lock detection
   useEffect(() => {
     const checkForLock = () => {
-      if (isLocked || Date.now() < releaseCooldownUntilRef.current) return;
-      const element = containerRef.current;
-      if (!element) return;
+      if (isLockedRef.current || Date.now() < releaseCooldownUntilRef.current) return;
+      const el = containerRef.current;
+      if (!el) return;
 
-      const rect = element.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
 
-      // Lock when the section's top reaches the viewport top (within threshold)
-      if (rect.top <= 5 && rect.top >= -5) {
-        window.scrollTo({ top: element.offsetTop, behavior: "auto" });
-        setIsLocked(true);
-        return;
-      }
-
-      // Also catch fast scrolling that overshoots
-      if (rect.top < -5 && rect.bottom > window.innerHeight * 0.5) {
-        window.scrollTo({ top: element.offsetTop, behavior: "auto" });
-        setIsLocked(true);
+      if (rect.top <= 10 && rect.top >= -50 && rect.bottom > window.innerHeight * 0.5) {
+        // Reset progress for fresh lock
+        setProgressValue(0);
+        window.scrollTo({ top: el.offsetTop, behavior: "auto" });
+        lock();
       }
     };
 
     window.addEventListener("scroll", checkForLock, { passive: true });
     return () => window.removeEventListener("scroll", checkForLock);
-  }, [isLocked]);
+  }, []);
 
-  // Event handlers while locked
+  // Input handlers while locked
   useEffect(() => {
     if (!isLocked) return;
 
-    const previousOverflow = document.body.style.overflow;
-    const previousTouchAction = document.body.style.touchAction;
+    const prevOverflow = document.body.style.overflow;
+    const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
 
-    const moveTarget = (delta: number) => {
-      const direction = Math.sign(delta);
-      const next = clamp(targetProgressRef.current + delta / WHEEL_TO_FULL_PROGRESS, 0, 1);
+    const moveProgress = (delta: number) => {
+      const dir = Math.sign(delta);
+      const next = clamp(progressRef.current + delta / WHEEL_TO_FULL_PROGRESS, 0, 1);
 
-      if (next >= 1 && direction > 0) {
-        targetProgressRef.current = 1;
-        applyProgress(1);
+      if (next >= 1 && dir > 0) {
+        setProgressValue(1);
         releaseLock("down");
         return;
       }
-
-      if (next <= 0 && direction < 0) {
-        targetProgressRef.current = 0;
-        applyProgress(0);
+      if (next <= 0 && dir < 0) {
+        setProgressValue(0);
         releaseLock("up");
         return;
       }
-
-      targetProgressRef.current = next;
+      setProgressValue(next);
     };
 
-    const onWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      moveTarget(event.deltaY);
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      moveProgress(e.deltaY);
     };
 
     let touchY = 0;
-    const onTouchStart = (event: TouchEvent) => {
-      touchY = event.touches[0]?.clientY ?? 0;
+    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0; };
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      const cur = e.touches[0]?.clientY ?? touchY;
+      moveProgress((touchY - cur) * 2);
+      touchY = cur;
     };
 
-    const onTouchMove = (event: TouchEvent) => {
-      event.preventDefault();
-      const currentY = event.touches[0]?.clientY ?? touchY;
-      const delta = (touchY - currentY) * 2;
-      touchY = currentY;
-      moveTarget(delta);
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      const downKeys = ["ArrowDown", "PageDown", " "];
-      const upKeys = ["ArrowUp", "PageUp"];
-
-      if (downKeys.includes(event.key)) {
-        event.preventDefault();
-        moveTarget(WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (["ArrowDown", "PageDown", " "].includes(e.key)) {
+        e.preventDefault();
+        moveProgress(WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
       }
-
-      if (upKeys.includes(event.key)) {
-        event.preventDefault();
-        moveTarget(-WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
+      if (["ArrowUp", "PageUp"].includes(e.key)) {
+        e.preventDefault();
+        moveProgress(-WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
       }
     };
 
@@ -243,8 +204,8 @@ const HorizontalServices = () => {
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-      document.body.style.touchAction = previousTouchAction;
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouch;
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
