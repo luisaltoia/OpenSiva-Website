@@ -33,6 +33,10 @@ const WHEEL_TO_FULL_PROGRESS = 3200;
 const KEY_PROGRESS_STEP = 0.08;
 const MAX_WHEEL_DELTA = 220;
 const LOCK_LINE = 0;
+const LOCK_REARM_DISTANCE = 180;
+const LOCK_RELEASE_BUFFER = 24;
+const OPPOSITE_DIRECTION_IGNORE_MS = 140;
+const OPPOSITE_DIRECTION_IGNORE_DELTA = 55;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
