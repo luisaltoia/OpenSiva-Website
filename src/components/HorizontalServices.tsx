@@ -29,8 +29,10 @@ const services = [
 const EXPANDED_WIDTH = 520;
 const COLLAPSED_WIDTH = 160;
 const GAP = 16;
-const WHEEL_TO_FULL_PROGRESS = 3000;
+const WHEEL_TO_FULL_PROGRESS = 3200;
 const KEY_PROGRESS_STEP = 0.08;
+const MAX_WHEEL_DELTA = 220;
+const LOCK_LINE = 0;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -92,6 +94,7 @@ const HorizontalServices = () => {
   const progress = useMotionValue(0);
   const progressRef = useRef(0);
   const releaseCooldownUntilRef = useRef(0);
+  const previousTopRef = useRef<number | null>(null);
   const isLockedRef = useRef(false);
   const [isLocked, setIsLocked] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -107,7 +110,12 @@ const HorizontalServices = () => {
     setActiveIndex(getActiveIndex(clamped));
   };
 
-  const lock = () => {
+  const lock = (entryDirection: "down" | "up") => {
+    if (entryDirection === "down") {
+      setProgressValue(0);
+    } else {
+      setProgressValue(1);
+    }
     isLockedRef.current = true;
     setIsLocked(true);
   };
@@ -115,7 +123,8 @@ const HorizontalServices = () => {
   const releaseLock = (direction: "down" | "up") => {
     isLockedRef.current = false;
     setIsLocked(false);
-    releaseCooldownUntilRef.current = Date.now() + 350;
+    releaseCooldownUntilRef.current = Date.now() + 700;
+    previousTopRef.current = null;
 
     const sectionTop = containerRef.current?.offsetTop ?? window.scrollY;
     const targetY =
@@ -126,24 +135,31 @@ const HorizontalServices = () => {
     window.scrollTo({ top: targetY, behavior: "smooth" });
   };
 
-  // Lock detection
+  // Lock only when crossing the lock threshold (prevents random re-lock resets)
   useEffect(() => {
     const checkForLock = () => {
-      if (isLockedRef.current || Date.now() < releaseCooldownUntilRef.current) return;
       const el = containerRef.current;
       if (!el) return;
 
       const rect = el.getBoundingClientRect();
+      const currentTop = rect.top;
+      const previousTop = previousTopRef.current ?? currentTop;
+      previousTopRef.current = currentTop;
 
-      if (rect.top <= 10 && rect.top >= -50 && rect.bottom > window.innerHeight * 0.5) {
-        // Reset progress for fresh lock
-        setProgressValue(0);
-        window.scrollTo({ top: el.offsetTop, behavior: "auto" });
-        lock();
-      }
+      if (isLockedRef.current || Date.now() < releaseCooldownUntilRef.current) return;
+
+      const crossedDown = previousTop > LOCK_LINE && currentTop <= LOCK_LINE;
+      const crossedUp = previousTop < LOCK_LINE && currentTop >= LOCK_LINE;
+
+      if (!crossedDown && !crossedUp) return;
+
+      window.scrollTo({ top: el.offsetTop + LOCK_LINE, behavior: "auto" });
+      lock(crossedDown ? "down" : "up");
     };
 
+    previousTopRef.current = containerRef.current?.getBoundingClientRect().top ?? null;
     window.addEventListener("scroll", checkForLock, { passive: true });
+
     return () => window.removeEventListener("scroll", checkForLock);
   }, []);
 
@@ -156,8 +172,11 @@ const HorizontalServices = () => {
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
 
-    const moveProgress = (delta: number) => {
+    const moveProgress = (rawDelta: number) => {
+      const delta = clamp(rawDelta, -MAX_WHEEL_DELTA, MAX_WHEEL_DELTA);
       const dir = Math.sign(delta);
+      if (!dir) return;
+
       const next = clamp(progressRef.current + delta / WHEEL_TO_FULL_PROGRESS, 0, 1);
 
       if (next >= 1 && dir > 0) {
@@ -170,6 +189,7 @@ const HorizontalServices = () => {
         releaseLock("up");
         return;
       }
+
       setProgressValue(next);
     };
 
@@ -179,7 +199,10 @@ const HorizontalServices = () => {
     };
 
     let touchY = 0;
-    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0]?.clientY ?? 0; };
+    const onTouchStart = (e: TouchEvent) => {
+      touchY = e.touches[0]?.clientY ?? 0;
+    };
+
     const onTouchMove = (e: TouchEvent) => {
       e.preventDefault();
       const cur = e.touches[0]?.clientY ?? touchY;
