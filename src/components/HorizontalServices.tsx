@@ -29,8 +29,9 @@ const services = [
 const EXPANDED_WIDTH = 520;
 const COLLAPSED_WIDTH = 160;
 const GAP = 16;
-const WHEEL_TO_FULL_PROGRESS = 2600;
+const WHEEL_TO_FULL_PROGRESS = 3200;
 const KEY_PROGRESS_STEP = 0.08;
+const LERP_SPEED = 0.12;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -94,17 +95,18 @@ const HorizontalServices = () => {
   const containerRef = useRef<HTMLElement>(null);
   const progress = useMotionValue(0);
   const progressRef = useRef(0);
+  const targetProgressRef = useRef(0);
   const releaseCooldownUntilRef = useRef(0);
-  const previousTopRef = useRef<number | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const rafRef = useRef<number>(0);
 
   const titleOpacity = useTransform(progress, [0, 0.08, 0.16], [1, 1, 0], { clamp: true });
   const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
   const cardsOpacity = useTransform(progress, [0.05, 0.18], [0, 1], { clamp: true });
 
-  const setProgress = (next: number) => {
-    const clamped = clamp(next, 0, 1);
+  const applyProgress = (value: number) => {
+    const clamped = clamp(value, 0, 1);
     progressRef.current = clamped;
     progress.set(clamped);
     setActiveIndex(getActiveIndex(clamped));
@@ -112,7 +114,7 @@ const HorizontalServices = () => {
 
   const releaseLock = (direction: "down" | "up") => {
     setIsLocked(false);
-    releaseCooldownUntilRef.current = Date.now() + 250;
+    releaseCooldownUntilRef.current = Date.now() + 400;
 
     const sectionTop = containerRef.current?.offsetTop ?? window.scrollY;
     const targetY =
@@ -120,9 +122,32 @@ const HorizontalServices = () => {
         ? sectionTop + window.innerHeight + 4
         : Math.max(0, sectionTop - window.innerHeight * 0.65);
 
-    window.scrollTo({ top: targetY, behavior: "auto" });
+    window.scrollTo({ top: targetY, behavior: "smooth" });
   };
 
+  // Lerp animation loop — smoothly interpolates progress toward target
+  useEffect(() => {
+    if (!isLocked) return;
+
+    const animate = () => {
+      const current = progressRef.current;
+      const target = targetProgressRef.current;
+      const diff = target - current;
+
+      if (Math.abs(diff) > 0.001) {
+        applyProgress(current + diff * LERP_SPEED);
+      } else if (current !== target) {
+        applyProgress(target);
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [isLocked]);
+
+  // Lock detection on scroll
   useEffect(() => {
     const checkForLock = () => {
       if (isLocked || Date.now() < releaseCooldownUntilRef.current) return;
@@ -130,25 +155,26 @@ const HorizontalServices = () => {
       if (!element) return;
 
       const rect = element.getBoundingClientRect();
-      const previousTop = previousTopRef.current ?? rect.top;
-      previousTopRef.current = rect.top;
 
-      const crossedLockLineWhileScrollingDown = previousTop > 0 && rect.top <= 0;
-      const crossedLockLineWhileScrollingUp = previousTop < 0 && rect.top >= 0;
+      // Lock when the section's top reaches the viewport top (within threshold)
+      if (rect.top <= 5 && rect.top >= -5) {
+        window.scrollTo({ top: element.offsetTop, behavior: "auto" });
+        setIsLocked(true);
+        return;
+      }
 
-      if (!crossedLockLineWhileScrollingDown && !crossedLockLineWhileScrollingUp) return;
-
-      const sectionTop = rect.top + window.scrollY;
-      window.scrollTo({ top: sectionTop, behavior: "auto" });
-      setIsLocked(true);
+      // Also catch fast scrolling that overshoots
+      if (rect.top < -5 && rect.bottom > window.innerHeight * 0.5) {
+        window.scrollTo({ top: element.offsetTop, behavior: "auto" });
+        setIsLocked(true);
+      }
     };
 
     window.addEventListener("scroll", checkForLock, { passive: true });
-    checkForLock();
-
     return () => window.removeEventListener("scroll", checkForLock);
   }, [isLocked]);
 
+  // Event handlers while locked
   useEffect(() => {
     if (!isLocked) return;
 
@@ -157,28 +183,30 @@ const HorizontalServices = () => {
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
 
-    const moveProgress = (delta: number) => {
+    const moveTarget = (delta: number) => {
       const direction = Math.sign(delta);
-      const next = clamp(progressRef.current + delta / WHEEL_TO_FULL_PROGRESS, 0, 1);
+      const next = clamp(targetProgressRef.current + delta / WHEEL_TO_FULL_PROGRESS, 0, 1);
 
       if (next >= 1 && direction > 0) {
-        setProgress(1);
+        targetProgressRef.current = 1;
+        applyProgress(1);
         releaseLock("down");
         return;
       }
 
       if (next <= 0 && direction < 0) {
-        setProgress(0);
+        targetProgressRef.current = 0;
+        applyProgress(0);
         releaseLock("up");
         return;
       }
 
-      setProgress(next);
+      targetProgressRef.current = next;
     };
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      moveProgress(event.deltaY);
+      moveTarget(event.deltaY);
     };
 
     let touchY = 0;
@@ -191,7 +219,7 @@ const HorizontalServices = () => {
       const currentY = event.touches[0]?.clientY ?? touchY;
       const delta = (touchY - currentY) * 2;
       touchY = currentY;
-      moveProgress(delta);
+      moveTarget(delta);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -200,12 +228,12 @@ const HorizontalServices = () => {
 
       if (downKeys.includes(event.key)) {
         event.preventDefault();
-        moveProgress(WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
+        moveTarget(WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
       }
 
       if (upKeys.includes(event.key)) {
         event.preventDefault();
-        moveProgress(-WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
+        moveTarget(-WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
       }
     };
 
