@@ -29,8 +29,9 @@ const services = [
 const EXPANDED_WIDTH = 520;
 const COLLAPSED_WIDTH = 160;
 const GAP = 16;
-const WHEEL_TO_FULL_PROGRESS = 2600;
+const WHEEL_TO_FULL_PROGRESS = 3200;
 const KEY_PROGRESS_STEP = 0.08;
+const LERP_SPEED = 0.12;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
