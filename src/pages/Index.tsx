@@ -23,10 +23,10 @@ const Index = () => {
   const lineRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: lineP } = useScroll({
     target: lineRef,
-    offset: ["start end", "start 0.6"],
+    offset: ["start end", "start center"],
   });
-  const lineBlur = useTransform(lineP, [0, 0.6], [10, 0]);
-  const lineOpacity = useTransform(lineP, [0, 0.5], [0, 1]);
+  const lineBlur = useTransform(lineP, [0, 1], [12, 0]);
+  const lineOpacity = useTransform(lineP, [0, 0.6], [0, 1]);
   const lineScale = useTransform(lineP, [0, 1], [1.03, 1]);
 
 
@@ -57,53 +57,8 @@ const Index = () => {
         <HorizontalServices />
       </section>
 
-      {/* ═══ PROOF BAR ═══ */}
-      <motion.section
-        className="relative z-20 bg-background py-32"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <div className="container mx-auto px-6">
-          <div className="max-w-5xl mx-auto">
-            <motion.div
-              className="w-full h-px bg-border mb-16"
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              style={{ transformOrigin: "left" }}
-            />
-            <div className="grid grid-cols-3 gap-8 text-center">
-              {[
-                { number: "40+", label: "Ventures backed" },
-                { number: "8+", label: "Industries served" },
-                { number: "3", label: "Continents" },
-              ].map((metric, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.8 }}
-                  transition={{ duration: 0.7, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <p className="text-4xl md:text-5xl font-light text-architectural mb-2">{metric.number}</p>
-                  <p className="text-minimal text-muted-foreground">{metric.label}</p>
-                </motion.div>
-              ))}
-            </div>
-            <motion.div
-              className="w-full h-px bg-border mt-16"
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              viewport={{ once: true, amount: 0.5 }}
-              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              style={{ transformOrigin: "right" }}
-            />
-          </div>
-        </div>
-      </motion.section>
+
+
 
       {/* ═══ THE LINE — blurs into sharp focus (faster) ═══ */}
       <motion.section
