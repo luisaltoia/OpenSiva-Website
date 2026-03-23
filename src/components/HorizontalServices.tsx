@@ -29,14 +29,13 @@ const services = [
 const EXPANDED_WIDTH = 520;
 const COLLAPSED_WIDTH = 160;
 const GAP = 16;
-const WHEEL_TO_FULL_PROGRESS = 3200;
-const KEY_PROGRESS_STEP = 0.08;
-const MAX_WHEEL_DELTA = 220;
 const LOCK_LINE = 0;
 const LOCK_REARM_DISTANCE = 180;
 const LOCK_RELEASE_BUFFER = 24;
+const LOCK_PREEMPT_THRESHOLD = 120;
 const OPPOSITE_DIRECTION_IGNORE_MS = 140;
 const OPPOSITE_DIRECTION_IGNORE_DELTA = 55;
+const SLIDE_INPUT_COOLDOWN_MS = 260;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -45,6 +44,12 @@ const getActiveIndex = (progress: number) => {
   const cardProgress = clamp((progress - 0.16) / 0.84, 0, 1);
   const segments = services.length - 1;
   return Math.round(cardProgress * segments);
+};
+
+const getProgressForIndex = (index: number) => {
+  const segments = Math.max(services.length - 1, 1);
+  const normalized = index / segments;
+  return clamp(0.16 + normalized * 0.84, 0, 1);
 };
 
 const ServiceCard = ({
@@ -105,6 +110,7 @@ const HorizontalServices = () => {
   const pendingReleaseDirectionRef = useRef<"down" | "up" | null>(null);
   const lastInputDirectionRef = useRef(0);
   const lastInputTsRef = useRef(0);
+  const lastStepTsRef = useRef(0);
   const [isLocked, setIsLocked] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -130,10 +136,10 @@ const HorizontalServices = () => {
     lockAnchorYRef.current = sectionTop;
     window.scrollTo({ top: sectionTop + LOCK_LINE, behavior: "auto" });
 
-    // Start from logical edge based on entry direction
     setProgressValue(entryDirection === "down" ? 0 : 1);
     isLockedRef.current = true;
     lockArmedRef.current = false;
+    lastStepTsRef.current = 0;
     setIsLocked(true);
   };
 
@@ -146,6 +152,7 @@ const HorizontalServices = () => {
     lockAnchorYRef.current = null;
     lastInputDirectionRef.current = 0;
     lastInputTsRef.current = 0;
+    lastStepTsRef.current = 0;
   };
 
   // Run release scroll after body overflow is restored (prevents re-lock/reset jitter)
@@ -167,7 +174,31 @@ const HorizontalServices = () => {
     });
   }, [isLocked]);
 
-  // Lock only on real threshold crossing, and only when lock has been re-armed
+  // Predictive lock: intercept wheel before crossing the lock line to prevent overshoot teleport.
+  useEffect(() => {
+    const handleWheelNearSection = (e: WheelEvent) => {
+      const el = containerRef.current;
+      if (!el || isLockedRef.current) return;
+      if (!lockArmedRef.current || Date.now() < releaseCooldownUntilRef.current) return;
+
+      const rect = el.getBoundingClientRect();
+      if (Math.abs(rect.top - LOCK_LINE) > LOCK_PREEMPT_THRESHOLD) return;
+
+      const projectedTop = rect.top - e.deltaY;
+      const willCrossDown = e.deltaY > 0 && rect.top > LOCK_LINE && projectedTop <= LOCK_LINE;
+      const willCrossUp = e.deltaY < 0 && rect.top < LOCK_LINE && projectedTop >= LOCK_LINE;
+
+      if (!willCrossDown && !willCrossUp) return;
+
+      e.preventDefault();
+      lock(willCrossDown ? "down" : "up");
+    };
+
+    window.addEventListener("wheel", handleWheelNearSection, { passive: false });
+    return () => window.removeEventListener("wheel", handleWheelNearSection);
+  }, []);
+
+  // Lock on threshold crossing as fallback for non-wheel navigation (keyboard/touch momentum).
   useEffect(() => {
     const checkForLock = () => {
       const el = containerRef.current;
@@ -214,35 +245,40 @@ const HorizontalServices = () => {
       if (!rawDelta) return;
 
       const now = performance.now();
-      const delta = clamp(rawDelta, -MAX_WHEEL_DELTA, MAX_WHEEL_DELTA);
-      const direction = Math.sign(delta);
+      const direction = Math.sign(rawDelta);
+      if (direction === 0) return;
 
       const isOppositeMomentum =
         lastInputDirectionRef.current !== 0 &&
         direction !== lastInputDirectionRef.current &&
         now - lastInputTsRef.current < OPPOSITE_DIRECTION_IGNORE_MS &&
-        Math.abs(delta) < OPPOSITE_DIRECTION_IGNORE_DELTA;
+        Math.abs(rawDelta) < OPPOSITE_DIRECTION_IGNORE_DELTA;
 
       if (isOppositeMomentum) return;
+      if (now - lastStepTsRef.current < SLIDE_INPUT_COOLDOWN_MS) return;
 
       lastInputDirectionRef.current = direction;
       lastInputTsRef.current = now;
 
-      const next = clamp(progressRef.current + delta / WHEEL_TO_FULL_PROGRESS, 0, 1);
+      const currentIndex = getActiveIndex(progressRef.current);
 
-      if (next >= 1 && direction > 0) {
+      if (currentIndex >= services.length - 1 && direction > 0) {
         setProgressValue(1);
         releaseLock("down");
         return;
       }
 
-      if (next <= 0 && direction < 0) {
+      if (currentIndex <= 0 && direction < 0) {
         setProgressValue(0);
         releaseLock("up");
         return;
       }
 
-      setProgressValue(next);
+      const targetIndex = clamp(currentIndex + direction, 0, services.length - 1);
+      const finalProgress = getProgressForIndex(targetIndex);
+
+      lastStepTsRef.current = now;
+      setProgressValue(finalProgress);
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -271,11 +307,11 @@ const HorizontalServices = () => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (["ArrowDown", "PageDown", " "].includes(e.key)) {
         e.preventDefault();
-        moveProgress(WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
+        moveProgress(1);
       }
       if (["ArrowUp", "PageUp"].includes(e.key)) {
         e.preventDefault();
-        moveProgress(-WHEEL_TO_FULL_PROGRESS * KEY_PROGRESS_STEP);
+        moveProgress(-1);
       }
     };
 
