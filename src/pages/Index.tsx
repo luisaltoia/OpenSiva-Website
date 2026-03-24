@@ -34,7 +34,7 @@ const Index = () => {
   useScrollProgress();
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden" style={{ scrollSnapType: "y mandatory" }}>
+    <div className="min-h-screen bg-background overflow-x-hidden" style={{ scrollSnapType: "y proximity" }}>
       <Navigation />
 
       {/* ═══ HERO — Stays sticky while Section B scrolls over it ═══ */}
