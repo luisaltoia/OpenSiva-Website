@@ -52,7 +52,7 @@ const Hero = () => {
         <div className="max-w-4xl mx-auto text-center relative">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white text-architectural mb-6">
             We build{" "}
-            <span className="inline-block relative align-bottom overflow-hidden" style={{ width: "max-content", maxWidth: "100%" }}>
+            <span className="inline-block relative align-bottom overflow-hidden pb-1" style={{ width: "max-content", maxWidth: "100%" }}>
               <span className="invisible">{rotatingWords.reduce((a, b) => a.length > b.length ? a : b)}</span>
               <AnimatePresence mode="wait">
                 <motion.span
