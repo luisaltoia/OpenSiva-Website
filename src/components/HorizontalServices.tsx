@@ -29,7 +29,8 @@ const services = [
 const EXPANDED_WIDTH = 520;
 const COLLAPSED_WIDTH = 160;
 const GAP = 16;
-const SCROLL_DEBOUNCE_MS = 250;
+const SCROLL_DEBOUNCE_MS = 150;
+const MIN_SCROLL_THRESHOLD = 30;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
