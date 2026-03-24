@@ -19,15 +19,17 @@ const Index = () => {
   const heroBlur = useTransform(heroP, [0.4, 1], [0, 10]);
   const heroOpacity = useTransform(heroP, [0.5, 0.85], [1, 0.3]);
 
-  /* ── Transition: "The Line" section fades/blurs into focus ── */
-  const lineRef = useRef<HTMLDivElement>(null);
+  /* ── Transition: "The Line" section blurs into focus ── */
+  const lineRef = useRef<HTMLElement>(null);
   const { scrollYProgress: lineP } = useScroll({
     target: lineRef,
-    offset: ["start end", "start center"],
+    offset: ["start 90%", "center center"],
   });
-  const lineBlur = useTransform(lineP, [0, 1], [12, 0]);
-  const lineOpacity = useTransform(lineP, [0, 0.6], [0, 1]);
-  const lineScale = useTransform(lineP, [0, 1], [1.03, 1]);
+  const lineTextBlur = useTransform(lineP, [0, 0.65, 1], [18, 6, 0]);
+  const lineTextFilter = useTransform(lineTextBlur, (v) => `blur(${v}px)`);
+  const lineTextOpacity = useTransform(lineP, [0, 0.2, 0.45], [0.5, 0.85, 1]);
+  const lineTextY = useTransform(lineP, [0, 1], [18, 0]);
+  const lineScale = useTransform(lineP, [0, 1], [1.02, 1]);
 
 
 
@@ -65,15 +67,20 @@ const Index = () => {
         ref={lineRef}
         className="relative z-20 min-h-screen flex items-center justify-center bg-background"
         style={{
-          opacity: lineOpacity,
           scale: lineScale,
-          filter: useTransform(lineBlur, (v) => `blur(${v}px)`),
         }}
       >
         <div className="container mx-auto px-6 text-center">
-          <p className="text-2xl md:text-3xl font-light text-architectural max-w-3xl mx-auto">
+          <motion.p
+            className="text-2xl md:text-3xl font-light text-architectural max-w-3xl mx-auto"
+            style={{
+              filter: lineTextFilter,
+              opacity: lineTextOpacity,
+              y: lineTextY,
+            }}
+          >
             We don't sell decks. We ship systems.
-          </p>
+          </motion.p>
         </div>
       </motion.section>
 
