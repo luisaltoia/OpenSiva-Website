@@ -134,14 +134,12 @@ const HorizontalServices = () => {
   const lock = (entryDirection: "down" | "up") => {
     const sectionTop = getSectionTop();
     lockAnchorYRef.current = sectionTop;
-    window.scrollTo({ top: sectionTop + LOCK_LINE, behavior: "auto" });
 
     setProgressValue(entryDirection === "down" ? 0 : 1);
     isLockedRef.current = true;
     lockArmedRef.current = false;
     setIsLocked(true);
     
-    // Initialize cooldown to prevent immediate slide skip
     slideChangeCooldownRef.current = performance.now() + SLIDE_CHANGE_COOLDOWN_MS;
   };
 
