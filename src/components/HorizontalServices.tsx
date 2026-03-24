@@ -204,6 +204,7 @@ const HorizontalServices = () => {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      console.log("🔄 Wheel event captured, delta:", e.deltaY);
 
       accumulatedDeltaRef.current += e.deltaY;
 
