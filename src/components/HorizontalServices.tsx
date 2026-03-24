@@ -29,7 +29,8 @@ const services = [
 const EXPANDED_WIDTH = 520;
 const COLLAPSED_WIDTH = 160;
 const GAP = 16;
-const SCROLL_DEBOUNCE_MS = 250;
+const SCROLL_DEBOUNCE_MS = 150;
+const MIN_SCROLL_THRESHOLD = 30;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -154,12 +155,20 @@ const HorizontalServices = () => {
       const totalDelta = accumulatedDeltaRef.current;
       accumulatedDeltaRef.current = 0;
       
-      if (!totalDelta || !isLocked) return;
+      if (!isLocked) return;
+      
+      if (Math.abs(totalDelta) < MIN_SCROLL_THRESHOLD) {
+        console.log("⚠️ Delta too small, ignoring:", totalDelta);
+        return;
+      }
+
+      console.log("✅ Executing slide change, delta:", totalDelta);
 
       const direction = Math.sign(totalDelta);
 
       // UNLOCK: At headline scrolling up
       if (progressRef.current <= 0.16 && direction < 0) {
+        console.log("🔓 Unlocking upward");
         setIsLocked(false);
         setProgressValue(0);
         document.body.style.overflow = prevOverflow;
@@ -171,6 +180,7 @@ const HorizontalServices = () => {
 
       // UNLOCK: At last slide scrolling down
       if (progressRef.current >= 1 && direction > 0) {
+        console.log("🔓 Unlocking downward");
         setIsLocked(false);
         document.body.style.overflow = prevOverflow;
         setTimeout(() => {
@@ -181,12 +191,14 @@ const HorizontalServices = () => {
 
       // HEADLINE → FIRST SLIDE
       if (progressRef.current < 0.16 && direction > 0) {
+        console.log("📍 Headline → First slide");
         setProgressValue(0.16);
         return;
       }
 
       // FIRST SLIDE → HEADLINE
       if (progressRef.current <= 0.16 && direction < 0) {
+        console.log("📍 First slide → Headline");
         setProgressValue(0);
         return;
       }
@@ -199,6 +211,7 @@ const HorizontalServices = () => {
       const targetProgress = targetIndex / segments;
       const finalProgress = clamp(targetProgress * 0.84 + 0.16, 0, 1);
 
+      console.log("📍 Slide change:", currentIndex, "→", targetIndex);
       setProgressValue(finalProgress);
     };
 
