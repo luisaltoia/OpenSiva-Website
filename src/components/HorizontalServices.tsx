@@ -91,8 +91,6 @@ const HorizontalServices = () => {
   const progressRef = useRef(0);
   const [isLocked, setIsLocked] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const debounceTimerRef = useRef<number | null>(null);
-  const accumulatedDeltaRef = useRef(0);
 
   const titleOpacity = useTransform(progress, [0, 0.08, 0.16], [1, 1, 0], { clamp: true });
   const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
