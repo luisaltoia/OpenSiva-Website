@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useRef } from "react";
- 
+import { useRef, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const rotatingWords = ["AI Products", "AI Agents", "Automations"];
 
 const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; size: number }) => (
   <div
@@ -17,6 +19,15 @@ const Particle = ({ delay, x, y, size }: { delay: number; x: number; y: number; 
 );
 
 const Hero = () => {
+  const [wordIndex, setWordIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % rotatingWords.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   const particles = useRef(
     Array.from({ length: 12 }, (_, i) => ({
       id: i,
@@ -40,7 +51,23 @@ const Hero = () => {
       <div className="relative z-10 container mx-auto px-6">
         <div className="max-w-4xl mx-auto text-center relative">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white text-architectural mb-6">
-            We build AI products, agents, and automation for businesses ready to scale without the overhead.
+            We build{" "}
+            <span className="inline-block relative w-[280px] md:w-[380px] lg:w-[440px] h-[1.15em] align-bottom overflow-hidden">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={wordIndex}
+                  className="absolute left-0 right-0 text-white"
+                  initial={{ y: "100%", opacity: 0, filter: "blur(4px)" }}
+                  animate={{ y: "0%", opacity: 1, filter: "blur(0px)" }}
+                  exit={{ y: "-100%", opacity: 0, filter: "blur(4px)" }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {rotatingWords[wordIndex]}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+            <br />
+            for businesses ready to scale without the overhead.
           </h1>
           <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 max-w-2xl mx-auto">
             We take the knowledge, decisions, and processes your business depends on and turn them into AI systems that operate without adding headcount. Designed, built, and operated.
