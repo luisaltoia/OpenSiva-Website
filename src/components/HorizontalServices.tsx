@@ -106,36 +106,46 @@ const HorizontalServices = () => {
     setActiveIndex(getActiveIndex(clamped));
   };
 
-  // Detect when section reaches top using IntersectionObserver
+  // Lock when section reaches top of viewport
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const rect = entry.boundingClientRect;
-          const isAtTop = entry.isIntersecting && rect.top <= 10 && rect.top >= -10;
-          
-          if (isAtTop && !isLocked) {
-            setIsLocked(true);
-            setProgressValue(0);
-          }
-        });
-      },
-      { 
-        threshold: [0, 0.1, 0.5, 1],
-        rootMargin: "-10px 0px -90% 0px"
+    let previousTop: number | null = null;
+
+    const handleScroll = () => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const currentTop = rect.top;
+
+      if (isLocked) return;
+
+      const isNearTop = currentTop <= 50 && currentTop >= -50;
+
+      if (isNearTop) {
+        const crossedFromAbove = previousTop !== null && previousTop > 50 && currentTop <= 50;
+        const crossedFromBelow = previousTop !== null && previousTop < -50 && currentTop >= -50;
+
+        if (crossedFromAbove || crossedFromBelow || previousTop === null) {
+          console.log("🔒 LOCKING - Section reached top", { currentTop, previousTop });
+          setIsLocked(true);
+          setProgressValue(0);
+        }
       }
-    );
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
+      previousTop = currentTop;
+    };
 
-    return () => observer.disconnect();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [isLocked]);
 
   // Handle scroll while locked
   useEffect(() => {
+    console.log("🎯 Wheel handler effect running, isLocked:", isLocked);
     if (!isLocked) return;
+    console.log("✅ Lock is active, installing wheel handler");
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -194,6 +204,7 @@ const HorizontalServices = () => {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      console.log("🔄 Wheel event captured, delta:", e.deltaY);
 
       accumulatedDeltaRef.current += e.deltaY;
 
