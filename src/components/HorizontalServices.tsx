@@ -32,10 +32,10 @@ const GAP = 16;
 const LOCK_LINE = 0;
 const LOCK_REARM_DISTANCE = 180;
 const LOCK_RELEASE_BUFFER = 24;
+const SLIDE_CHANGE_COOLDOWN_MS = 600;
 const LOCK_PREEMPT_THRESHOLD = 120;
 const OPPOSITE_DIRECTION_IGNORE_MS = 140;
 const OPPOSITE_DIRECTION_IGNORE_DELTA = 55;
-const SLIDE_INPUT_COOLDOWN_MS = 260;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
@@ -101,6 +101,7 @@ const ServiceCard = ({
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLElement>(null);
   const progress = useMotionValue(0);
+  const slideChangeCooldownRef = useRef(0);
   const progressRef = useRef(0);
   const releaseCooldownUntilRef = useRef(0);
   const previousTopRef = useRef<number | null>(null);
@@ -110,7 +111,6 @@ const HorizontalServices = () => {
   const pendingReleaseDirectionRef = useRef<"down" | "up" | null>(null);
   const lastInputDirectionRef = useRef(0);
   const lastInputTsRef = useRef(0);
-  const lastStepTsRef = useRef(0);
   const [isLocked, setIsLocked] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -139,7 +139,7 @@ const HorizontalServices = () => {
     setProgressValue(entryDirection === "down" ? 0 : 1);
     isLockedRef.current = true;
     lockArmedRef.current = false;
-    lastStepTsRef.current = 0;
+    slideChangeCooldownRef.current = 0;
     setIsLocked(true);
   };
 
@@ -152,7 +152,7 @@ const HorizontalServices = () => {
     lockAnchorYRef.current = null;
     lastInputDirectionRef.current = 0;
     lastInputTsRef.current = 0;
-    lastStepTsRef.current = 0;
+    slideChangeCooldownRef.current = 0;
   };
 
   // Run release scroll after body overflow is restored (prevents re-lock/reset jitter)
@@ -245,9 +245,15 @@ const HorizontalServices = () => {
       if (!rawDelta) return;
 
       const now = performance.now();
-      const direction = Math.sign(rawDelta);
-      if (direction === 0) return;
 
+      // COOLDOWN CHECK - Ignore inputs during cooldown
+      if (now < slideChangeCooldownRef.current) {
+        return;
+      }
+
+      const direction = Math.sign(rawDelta);
+
+      // Ignore opposite momentum scrolling
       const isOppositeMomentum =
         lastInputDirectionRef.current !== 0 &&
         direction !== lastInputDirectionRef.current &&
@@ -255,30 +261,40 @@ const HorizontalServices = () => {
         Math.abs(rawDelta) < OPPOSITE_DIRECTION_IGNORE_DELTA;
 
       if (isOppositeMomentum) return;
-      if (now - lastStepTsRef.current < SLIDE_INPUT_COOLDOWN_MS) return;
 
       lastInputDirectionRef.current = direction;
       lastInputTsRef.current = now;
 
+      // Calculate target index based on discrete scroll event
       const currentIndex = getActiveIndex(progressRef.current);
-
-      if (currentIndex >= services.length - 1 && direction > 0) {
-        setProgressValue(1);
-        releaseLock("down");
-        return;
-      }
-
-      if (currentIndex <= 0 && direction < 0) {
-        setProgressValue(0);
-        releaseLock("up");
-        return;
-      }
-
       const targetIndex = clamp(currentIndex + direction, 0, services.length - 1);
-      const finalProgress = getProgressForIndex(targetIndex);
 
-      lastStepTsRef.current = now;
+      // If no actual change in index, don't do anything
+      if (targetIndex === currentIndex) {
+        // At the edge - check if should release lock
+        if (targetIndex === services.length - 1 && direction > 0) {
+          setProgressValue(1);
+          releaseLock("down");
+          return;
+        }
+        if (targetIndex === 0 && direction < 0) {
+          setProgressValue(0);
+          releaseLock("up");
+          return;
+        }
+        return;
+      }
+
+      // Convert target index back to progress
+      const segments = services.length - 1;
+      const targetProgress = targetIndex / segments;
+      const finalProgress = clamp(targetProgress * 0.84 + 0.16, 0, 1);
+
+      // Apply the slide change
       setProgressValue(finalProgress);
+
+      // Start cooldown to block further inputs
+      slideChangeCooldownRef.current = now + SLIDE_CHANGE_COOLDOWN_MS;
     };
 
     const onWheel = (e: WheelEvent) => {
