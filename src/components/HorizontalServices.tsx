@@ -219,37 +219,18 @@ const HorizontalServices = () => {
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
 
-    const moveProgress = (rawDelta: number) => {
-      if (!rawDelta) return;
+    let accumulatedDelta = 0;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-      const now = performance.now();
+    const executeSlideChange = () => {
+      const direction = Math.sign(accumulatedDelta);
+      accumulatedDelta = 0;
+      if (!direction) return;
 
-      // COOLDOWN CHECK - Ignore inputs during cooldown
-      if (now < slideChangeCooldownRef.current) {
-        return;
-      }
-
-      const direction = Math.sign(rawDelta);
-
-      // Ignore opposite momentum scrolling
-      const isOppositeMomentum =
-        lastInputDirectionRef.current !== 0 &&
-        direction !== lastInputDirectionRef.current &&
-        now - lastInputTsRef.current < OPPOSITE_DIRECTION_IGNORE_MS &&
-        Math.abs(rawDelta) < OPPOSITE_DIRECTION_IGNORE_DELTA;
-
-      if (isOppositeMomentum) return;
-
-      lastInputDirectionRef.current = direction;
-      lastInputTsRef.current = now;
-
-      // Calculate target index based on discrete scroll event
       const currentIndex = getActiveIndex(progressRef.current);
       const targetIndex = clamp(currentIndex + direction, 0, services.length - 1);
 
-      // If no actual change in index, don't do anything
       if (targetIndex === currentIndex) {
-        // At the edge - check if should release lock
         if (targetIndex === services.length - 1 && direction > 0) {
           setProgressValue(1);
           releaseLock("down");
@@ -263,16 +244,36 @@ const HorizontalServices = () => {
         return;
       }
 
-      // Convert target index back to progress
       const segments = services.length - 1;
       const targetProgress = targetIndex / segments;
       const finalProgress = clamp(targetProgress * 0.84 + 0.16, 0, 1);
-
-      // Apply the slide change
       setProgressValue(finalProgress);
+      slideChangeCooldownRef.current = performance.now() + SLIDE_CHANGE_COOLDOWN_MS;
+    };
 
-      // Start cooldown to block further inputs
-      slideChangeCooldownRef.current = now + SLIDE_CHANGE_COOLDOWN_MS;
+    const moveProgress = (rawDelta: number) => {
+      if (!rawDelta) return;
+
+      const now = performance.now();
+      if (now < slideChangeCooldownRef.current) return;
+
+      const direction = Math.sign(rawDelta);
+
+      const isOppositeMomentum =
+        lastInputDirectionRef.current !== 0 &&
+        direction !== lastInputDirectionRef.current &&
+        now - lastInputTsRef.current < OPPOSITE_DIRECTION_IGNORE_MS &&
+        Math.abs(rawDelta) < OPPOSITE_DIRECTION_IGNORE_DELTA;
+
+      if (isOppositeMomentum) return;
+
+      lastInputDirectionRef.current = direction;
+      lastInputTsRef.current = now;
+
+      accumulatedDelta += rawDelta;
+
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(executeSlideChange, SCROLL_DEBOUNCE_MS);
     };
 
     const onWheel = (e: WheelEvent) => {
