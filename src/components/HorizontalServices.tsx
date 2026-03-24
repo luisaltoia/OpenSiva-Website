@@ -139,8 +139,10 @@ const HorizontalServices = () => {
     setProgressValue(entryDirection === "down" ? 0 : 1);
     isLockedRef.current = true;
     lockArmedRef.current = false;
-    slideChangeCooldownRef.current = 0;
     setIsLocked(true);
+    
+    // Initialize cooldown to prevent immediate slide skip
+    slideChangeCooldownRef.current = performance.now() + SLIDE_CHANGE_COOLDOWN_MS;
   };
 
   const releaseLock = (direction: "down" | "up") => {

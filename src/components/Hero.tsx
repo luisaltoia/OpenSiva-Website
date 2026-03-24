@@ -43,7 +43,7 @@ const Hero = () => {
             We build AI products, agents, and automation for businesses ready to scale without the overhead.
           </h1>
           <p className="text-lg md:text-xl text-white/60 font-light tracking-wide mb-10 max-w-2xl mx-auto">
-            Your playbooks. Your frameworks. Your decision logic. Delivered to thousands of people at once without adding a single person to payroll or a single call to your calendar.
+            We take the knowledge, decisions, and processes your business depends on and turn them into AI systems that operate without adding headcount. Designed, built, and operated.
           </p>
           <div>
             <Button asChild size="lg" className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/20 transition-colors duration-300 mb-6">
