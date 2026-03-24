@@ -174,29 +174,7 @@ const HorizontalServices = () => {
     });
   }, [isLocked]);
 
-  // Predictive lock: intercept wheel before crossing the lock line to prevent overshoot teleport.
-  useEffect(() => {
-    const handleWheelNearSection = (e: WheelEvent) => {
-      const el = containerRef.current;
-      if (!el || isLockedRef.current) return;
-      if (!lockArmedRef.current || Date.now() < releaseCooldownUntilRef.current) return;
-
-      const rect = el.getBoundingClientRect();
-      if (Math.abs(rect.top - LOCK_LINE) > LOCK_PREEMPT_THRESHOLD) return;
-
-      const projectedTop = rect.top - e.deltaY;
-      const willCrossDown = e.deltaY > 0 && rect.top > LOCK_LINE && projectedTop <= LOCK_LINE;
-      const willCrossUp = e.deltaY < 0 && rect.top < LOCK_LINE && projectedTop >= LOCK_LINE;
-
-      if (!willCrossDown && !willCrossUp) return;
-
-      e.preventDefault();
-      lock(willCrossDown ? "down" : "up");
-    };
-
-    window.addEventListener("wheel", handleWheelNearSection, { passive: false });
-    return () => window.removeEventListener("wheel", handleWheelNearSection);
-  }, []);
+  // Natural scroll locking handled by the scroll listener below
 
   // Lock on threshold crossing as fallback for non-wheel navigation (keyboard/touch momentum).
   useEffect(() => {
