@@ -143,7 +143,9 @@ const HorizontalServices = () => {
 
   // Handle scroll while locked
   useEffect(() => {
+    console.log("🎯 Wheel handler effect running, isLocked:", isLocked);
     if (!isLocked) return;
+    console.log("✅ Lock is active, installing wheel handler");
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
