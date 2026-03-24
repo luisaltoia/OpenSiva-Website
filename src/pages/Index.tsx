@@ -84,64 +84,53 @@ const Index = () => {
         </div>
       </motion.section>
 
-      {/* ═══ WORK PREVIEW ═══ */}
-      <motion.section
-        className="relative z-20 bg-background"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.15 }}
-        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-      >
+      {/* ═══ HOW WE BUILD ═══ */}
+      <section className="relative z-20 bg-background">
         <div className="container mx-auto px-6">
           <div className="max-w-7xl mx-auto py-32">
             <motion.h2
-              className="text-4xl md:text-6xl font-light text-architectural mb-16"
+              className="text-4xl md:text-6xl font-light text-architectural mb-24"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.5 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              Built. Running. Delivering.
+              How we build.
             </motion.h2>
-            <div className="grid md:grid-cols-2 gap-12 mb-12">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div className="border-t border-border pt-8">
-                  <p className="text-minimal text-muted-foreground mb-4">FINANCIAL EDUCATION</p>
-                  <p className="text-lg mb-2">AI guidance platform that scales two advisors' expertise to thousands of subscribers.</p>
-                  <p className="text-muted-foreground">Recurring revenue product. Zero calendar impact on the founding team.</p>
-                </div>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <div className="border-t border-border pt-8">
-                  <p className="text-minimal text-muted-foreground mb-4">LEAD GENERATION</p>
-                  <p className="text-lg mb-2">Automated prospecting pipeline that classifies, enriches, and routes contractor leads across an entire state.</p>
-                  <p className="text-muted-foreground">Hundreds of qualified leads processed weekly without a single manual lookup.</p>
-                </div>
-              </motion.div>
+
+            <div className="space-y-32">
+              {[
+                { num: 1, name: "Map", body: "We study how your business actually runs. Not the org chart — the real workflows. Who makes which decisions, where the bottlenecks are, what's manual that shouldn't be, and where expertise is stuck in one person's head. Every engagement starts here." },
+                { num: 2, name: "Diagnose", body: "We identify which processes have the highest ROI if automated, which knowledge should become a product, and which decisions can be handled by an agent. Not everything needs AI. We find the areas where it pays for itself." },
+                { num: 3, name: "Architect", body: "We design the system. Data flows, integration points, decision logic, and how the AI fits into your existing operations — not beside them. Every solution is scoped against a clear return before a single line of code is written." },
+                { num: 4, name: "Build", body: "We develop the AI products, agents, or automation end to end. No handoffs to third parties. No templates. Custom infrastructure built to your operations, your data, and your rules." },
+                { num: 5, name: "Deploy & Operate", body: "We launch the system into your live environment and operate it. Monitoring, maintenance, and performance tracking against the ROI targets set in the diagnostic. We don't hand over a login and disappear." },
+                { num: 6, name: "Scale", body: "Once the first systems prove their return, we expand. More processes. More automation. Higher AI maturity across the business. Each phase is driven by results from the last — not a roadmap written before we learned anything." },
+              ].map((stage) => (
+                <motion.div
+                  key={stage.num}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className="border-t border-border pt-8">
+                    <p className="text-minimal text-muted-foreground mb-6">
+                      STAGE {stage.num}
+                    </p>
+                    <h3 className="text-2xl md:text-3xl font-light text-architectural mb-4">
+                      {stage.name}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed max-w-[680px]">
+                      {stage.body}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <Link to="/work" className="text-foreground hover:text-muted-foreground transition-colors duration-300">
-                See all work →
-              </Link>
-            </motion.div>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* ═══ FOOTER CTA ═══ */}
       <div className="relative z-20">
