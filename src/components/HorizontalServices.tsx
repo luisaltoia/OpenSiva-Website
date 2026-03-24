@@ -223,20 +223,36 @@ const HorizontalServices = () => {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
     const executeSlideChange = () => {
-      const direction = Math.sign(accumulatedDelta);
+      const totalDelta = accumulatedDelta;
       accumulatedDelta = 0;
-      if (!direction) return;
+      if (!totalDelta) return;
+
+      const finalDirection = Math.sign(totalDelta);
+
+      // SPECIAL CASE: Headline to first slide
+      if (progressRef.current < 0.16 && finalDirection > 0) {
+        setProgressValue(0.16);
+        slideChangeCooldownRef.current = performance.now() + SLIDE_CHANGE_COOLDOWN_MS;
+        return;
+      }
+
+      // SPECIAL CASE: First slide back to headline
+      if (progressRef.current <= 0.16 && finalDirection < 0) {
+        setProgressValue(0);
+        slideChangeCooldownRef.current = performance.now() + SLIDE_CHANGE_COOLDOWN_MS;
+        return;
+      }
 
       const currentIndex = getActiveIndex(progressRef.current);
-      const targetIndex = clamp(currentIndex + direction, 0, services.length - 1);
+      const targetIndex = clamp(currentIndex + finalDirection, 0, services.length - 1);
 
       if (targetIndex === currentIndex) {
-        if (targetIndex === services.length - 1 && direction > 0) {
+        if (targetIndex === services.length - 1 && finalDirection > 0) {
           setProgressValue(1);
           releaseLock("down");
           return;
         }
-        if (targetIndex === 0 && direction < 0) {
+        if (targetIndex === 0 && finalDirection < 0) {
           setProgressValue(0);
           releaseLock("up");
           return;
