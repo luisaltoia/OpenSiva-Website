@@ -1,5 +1,5 @@
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion, useMotionValue, useTransform } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { Cpu, Bot, Workflow } from "lucide-react";
 
 const services = [
@@ -26,69 +26,60 @@ const services = [
   },
 ];
 
-const CARD_WIDTH = 520;
-const CARD_GAP = 40;
+const EXPANDED_WIDTH = 520;
+const COLLAPSED_WIDTH = 160;
+const GAP = 16;
+const SCROLL_DEBOUNCE_MS = 250;
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+const getActiveIndex = (progress: number) => {
+  const cardProgress = clamp((progress - 0.16) / 0.84, 0, 1);
+  const segments = services.length - 1;
+  return Math.round(cardProgress * segments);
+};
 
 const ServiceCard = ({
   service,
-  scrollProgress,
-  index,
+  isActive,
 }: {
   service: (typeof services)[0];
-  scrollProgress: any;
-  index: number;
+  isActive: boolean;
 }) => {
   const Icon = service.icon;
-  
-  const totalCards = services.length;
-  const startActivation = index / totalCards;
-  const endActivation = (index + 1) / totalCards;
-  
-  const scale = useTransform(
-    scrollProgress,
-    [startActivation - 0.1, startActivation, endActivation, endActivation + 0.1],
-    [0.85, 1, 1, 0.85]
-  );
-  
-  const opacity = useTransform(
-    scrollProgress,
-    [startActivation - 0.1, startActivation, endActivation, endActivation + 0.1],
-    [0.4, 1, 1, 0.4]
-  );
 
   return (
     <motion.article
-      className="flex-shrink-0 rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
-      style={{
-        width: CARD_WIDTH,
-        height: "50vh",
-        minHeight: "320px",
-        maxHeight: "420px",
-        scale,
-        opacity,
-      }}
+      className="flex-shrink-0 h-[50vh] min-h-[320px] max-h-[420px] rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
+      animate={{ width: isActive ? EXPANDED_WIDTH : COLLAPSED_WIDTH }}
+      transition={{ type: "spring", stiffness: 400, damping: 35 }}
     >
-      <div className="h-full flex flex-col overflow-hidden p-6 md:p-8">
-        <div className="pb-0">
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="p-6 md:p-8 pb-0">
           <Icon
             className="text-background drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-            size={32}
+            size={isActive ? 32 : 24}
             strokeWidth={1.5}
           />
         </div>
-        <div className="mt-auto pt-0">
-          <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3">
+        <div className="mt-auto p-6 md:p-8 pt-0">
+          <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3 whitespace-nowrap">
             0{service.id}
           </span>
-          <h3 className="font-light text-architectural text-background text-2xl md:text-3xl mb-2">
+          <h3 className={`font-light text-architectural text-background ${isActive ? "text-2xl md:text-3xl" : "text-sm"}`}>
             {service.label}
           </h3>
-          <p className="text-base font-light text-background/85 mb-2">
-            {service.headline}
-          </p>
-          <p className="text-background/60 leading-relaxed text-sm">
-            {service.body}
-          </p>
+          {isActive && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <p className="text-base font-light text-background/85 mb-2 mt-2">{service.headline}</p>
+              <p className="text-background/60 leading-relaxed text-sm">{service.body}</p>
+            </motion.div>
+          )}
         </div>
       </div>
     </motion.article>
@@ -97,28 +88,137 @@ const ServiceCard = ({
 
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLElement>(null);
-  
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
+  const progress = useMotionValue(0);
+  const progressRef = useRef(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const debounceTimerRef = useRef<number | null>(null);
+  const accumulatedDeltaRef = useRef(0);
 
-  const titleOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const titleScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
-  const cardsOpacity = useTransform(scrollYProgress, [0.1, 0.25], [0, 1]);
-  
-  const totalDistance = (services.length - 1) * (CARD_WIDTH + CARD_GAP);
-  const x = useTransform(scrollYProgress, [0.2, 1], [0, -totalDistance]);
+  const titleOpacity = useTransform(progress, [0, 0.08, 0.16], [1, 1, 0], { clamp: true });
+  const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
+  const cardsOpacity = useTransform(progress, [0.05, 0.18], [0, 1], { clamp: true });
+
+  const setProgressValue = (next: number) => {
+    const clamped = clamp(next, 0, 1);
+    progressRef.current = clamped;
+    progress.set(clamped);
+    setActiveIndex(getActiveIndex(clamped));
+  };
+
+  // Detect when section reaches top using IntersectionObserver
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const rect = entry.boundingClientRect;
+          const isAtTop = entry.isIntersecting && rect.top <= 10 && rect.top >= -10;
+          
+          if (isAtTop && !isLocked) {
+            setIsLocked(true);
+            setProgressValue(0);
+          }
+        });
+      },
+      { 
+        threshold: [0, 0.1, 0.5, 1],
+        rootMargin: "-10px 0px -90% 0px"
+      }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [isLocked]);
+
+  // Handle scroll while locked
+  useEffect(() => {
+    if (!isLocked) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const executeSlideChange = () => {
+      const totalDelta = accumulatedDeltaRef.current;
+      accumulatedDeltaRef.current = 0;
+      
+      if (!totalDelta || !isLocked) return;
+
+      const direction = Math.sign(totalDelta);
+
+      // UNLOCK: At headline scrolling up
+      if (progressRef.current <= 0.16 && direction < 0) {
+        setIsLocked(false);
+        setProgressValue(0);
+        document.body.style.overflow = prevOverflow;
+        setTimeout(() => {
+          window.scrollBy({ top: -window.innerHeight * 0.5, behavior: "smooth" });
+        }, 50);
+        return;
+      }
+
+      // UNLOCK: At last slide scrolling down
+      if (progressRef.current >= 1 && direction > 0) {
+        setIsLocked(false);
+        document.body.style.overflow = prevOverflow;
+        setTimeout(() => {
+          window.scrollBy({ top: window.innerHeight, behavior: "smooth" });
+        }, 50);
+        return;
+      }
+
+      // HEADLINE → FIRST SLIDE
+      if (progressRef.current < 0.16 && direction > 0) {
+        setProgressValue(0.16);
+        return;
+      }
+
+      // FIRST SLIDE → HEADLINE
+      if (progressRef.current <= 0.16 && direction < 0) {
+        setProgressValue(0);
+        return;
+      }
+
+      // NORMAL SLIDE NAVIGATION
+      const currentIndex = getActiveIndex(progressRef.current);
+      const targetIndex = clamp(currentIndex + direction, 0, services.length - 1);
+
+      const segments = services.length - 1;
+      const targetProgress = targetIndex / segments;
+      const finalProgress = clamp(targetProgress * 0.84 + 0.16, 0, 1);
+
+      setProgressValue(finalProgress);
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+
+      accumulatedDeltaRef.current += e.deltaY;
+
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = window.setTimeout(executeSlideChange, SCROLL_DEBOUNCE_MS);
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("wheel", onWheel);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [isLocked]);
 
   return (
     <section
       ref={containerRef}
-      className="relative bg-background"
-      style={{ height: "400vh" }}
+      className="relative z-40 min-h-screen bg-background"
+      style={{ scrollSnapAlign: "start" }}
     >
-      <div className="sticky top-0 h-screen overflow-hidden bg-background flex items-center justify-center">
+      <div className="relative z-40 h-screen overflow-hidden bg-background">
         <motion.div
-          className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none z-10"
+          className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none"
           style={{ opacity: titleOpacity, scale: titleScale }}
         >
           <h2 className="text-4xl md:text-6xl font-light text-architectural text-center text-foreground">
@@ -126,29 +226,15 @@ const HorizontalServices = () => {
           </h2>
         </motion.div>
 
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center"
-          style={{ opacity: cardsOpacity }}
-        >
-          <div className="relative w-full max-w-7xl overflow-visible">
-            <motion.div
-              className="flex items-center"
-              style={{ 
-                x,
-                gap: CARD_GAP,
-                paddingLeft: `calc(50vw - ${CARD_WIDTH / 2}px)`,
-                paddingRight: `calc(50vw - ${CARD_WIDTH / 2}px)`,
-              }}
-            >
-              {services.map((service, index) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  scrollProgress={scrollYProgress}
-                  index={index}
-                />
-              ))}
-            </motion.div>
+        <motion.div className="absolute inset-0 flex items-center justify-center" style={{ opacity: cardsOpacity }}>
+          <div className="flex" style={{ gap: GAP }}>
+            {services.map((service, i) => (
+              <ServiceCard
+                key={service.id}
+                service={service}
+                isActive={i === activeIndex}
+              />
+            ))}
           </div>
         </motion.div>
       </div>
