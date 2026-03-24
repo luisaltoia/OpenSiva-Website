@@ -33,7 +33,7 @@ const LOCK_LINE = 0;
 const LOCK_REARM_DISTANCE = 180;
 const LOCK_RELEASE_BUFFER = 24;
 const SLIDE_CHANGE_COOLDOWN_MS = 600;
-const LOCK_PREEMPT_THRESHOLD = 120;
+const SCROLL_DEBOUNCE_MS = 350;
 const OPPOSITE_DIRECTION_IGNORE_MS = 140;
 const OPPOSITE_DIRECTION_IGNORE_DELTA = 55;
 
@@ -134,14 +134,12 @@ const HorizontalServices = () => {
   const lock = (entryDirection: "down" | "up") => {
     const sectionTop = getSectionTop();
     lockAnchorYRef.current = sectionTop;
-    window.scrollTo({ top: sectionTop + LOCK_LINE, behavior: "auto" });
 
     setProgressValue(entryDirection === "down" ? 0 : 1);
     isLockedRef.current = true;
     lockArmedRef.current = false;
     setIsLocked(true);
     
-    // Initialize cooldown to prevent immediate slide skip
     slideChangeCooldownRef.current = performance.now() + SLIDE_CHANGE_COOLDOWN_MS;
   };
 
@@ -176,29 +174,7 @@ const HorizontalServices = () => {
     });
   }, [isLocked]);
 
-  // Predictive lock: intercept wheel before crossing the lock line to prevent overshoot teleport.
-  useEffect(() => {
-    const handleWheelNearSection = (e: WheelEvent) => {
-      const el = containerRef.current;
-      if (!el || isLockedRef.current) return;
-      if (!lockArmedRef.current || Date.now() < releaseCooldownUntilRef.current) return;
-
-      const rect = el.getBoundingClientRect();
-      if (Math.abs(rect.top - LOCK_LINE) > LOCK_PREEMPT_THRESHOLD) return;
-
-      const projectedTop = rect.top - e.deltaY;
-      const willCrossDown = e.deltaY > 0 && rect.top > LOCK_LINE && projectedTop <= LOCK_LINE;
-      const willCrossUp = e.deltaY < 0 && rect.top < LOCK_LINE && projectedTop >= LOCK_LINE;
-
-      if (!willCrossDown && !willCrossUp) return;
-
-      e.preventDefault();
-      lock(willCrossDown ? "down" : "up");
-    };
-
-    window.addEventListener("wheel", handleWheelNearSection, { passive: false });
-    return () => window.removeEventListener("wheel", handleWheelNearSection);
-  }, []);
+  // Natural scroll locking handled by the scroll listener below
 
   // Lock on threshold crossing as fallback for non-wheel navigation (keyboard/touch momentum).
   useEffect(() => {
@@ -243,37 +219,18 @@ const HorizontalServices = () => {
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
 
-    const moveProgress = (rawDelta: number) => {
-      if (!rawDelta) return;
+    let accumulatedDelta = 0;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-      const now = performance.now();
+    const executeSlideChange = () => {
+      const direction = Math.sign(accumulatedDelta);
+      accumulatedDelta = 0;
+      if (!direction) return;
 
-      // COOLDOWN CHECK - Ignore inputs during cooldown
-      if (now < slideChangeCooldownRef.current) {
-        return;
-      }
-
-      const direction = Math.sign(rawDelta);
-
-      // Ignore opposite momentum scrolling
-      const isOppositeMomentum =
-        lastInputDirectionRef.current !== 0 &&
-        direction !== lastInputDirectionRef.current &&
-        now - lastInputTsRef.current < OPPOSITE_DIRECTION_IGNORE_MS &&
-        Math.abs(rawDelta) < OPPOSITE_DIRECTION_IGNORE_DELTA;
-
-      if (isOppositeMomentum) return;
-
-      lastInputDirectionRef.current = direction;
-      lastInputTsRef.current = now;
-
-      // Calculate target index based on discrete scroll event
       const currentIndex = getActiveIndex(progressRef.current);
       const targetIndex = clamp(currentIndex + direction, 0, services.length - 1);
 
-      // If no actual change in index, don't do anything
       if (targetIndex === currentIndex) {
-        // At the edge - check if should release lock
         if (targetIndex === services.length - 1 && direction > 0) {
           setProgressValue(1);
           releaseLock("down");
@@ -287,16 +244,36 @@ const HorizontalServices = () => {
         return;
       }
 
-      // Convert target index back to progress
       const segments = services.length - 1;
       const targetProgress = targetIndex / segments;
       const finalProgress = clamp(targetProgress * 0.84 + 0.16, 0, 1);
-
-      // Apply the slide change
       setProgressValue(finalProgress);
+      slideChangeCooldownRef.current = performance.now() + SLIDE_CHANGE_COOLDOWN_MS;
+    };
 
-      // Start cooldown to block further inputs
-      slideChangeCooldownRef.current = now + SLIDE_CHANGE_COOLDOWN_MS;
+    const moveProgress = (rawDelta: number) => {
+      if (!rawDelta) return;
+
+      const now = performance.now();
+      if (now < slideChangeCooldownRef.current) return;
+
+      const direction = Math.sign(rawDelta);
+
+      const isOppositeMomentum =
+        lastInputDirectionRef.current !== 0 &&
+        direction !== lastInputDirectionRef.current &&
+        now - lastInputTsRef.current < OPPOSITE_DIRECTION_IGNORE_MS &&
+        Math.abs(rawDelta) < OPPOSITE_DIRECTION_IGNORE_DELTA;
+
+      if (isOppositeMomentum) return;
+
+      lastInputDirectionRef.current = direction;
+      lastInputTsRef.current = now;
+
+      accumulatedDelta += rawDelta;
+
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(executeSlideChange, SCROLL_DEBOUNCE_MS);
     };
 
     const onWheel = (e: WheelEvent) => {
