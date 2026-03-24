@@ -23,7 +23,7 @@ const stages = [
   {
     num: 4,
     name: "Build",
-    body: "We develop the AI products, agents, or automation end to end. No handoffs to third parties. No templates. Custom infrastructure built to your operations, your data, and your rules.",
+    body: "We develop the AI products, AI Agents, or automation end to end. No handoffs to third parties. No templates. Custom infrastructure built to your operations, your data, and your rules.",
     color: "#ef4444", // red
   },
   {
