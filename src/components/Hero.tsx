@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -73,10 +72,38 @@ const Hero = () => {
             We take the knowledge, decisions, and processes your business depends on and turn them into AI systems that operate without adding headcount. Designed, built, and operated.
           </p>
           <div>
-            <Button asChild size="lg" className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/20 transition-colors duration-300 mb-6">
-              <Link to="/contact">Talk to Us</Link>
+            <Button
+              size="lg"
+              className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/20 transition-colors duration-300 mb-6"
+              onClick={() => {
+                const element = document.querySelector("#contact");
+                if (element) {
+                  element.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+            >
+              Talk to Us
             </Button>
           </div>
+          <p
+            className="text-xs font-light tracking-widest uppercase"
+            style={{
+              background: 'linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.4) 40%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.4) 60%, rgba(255,255,255,0.4) 100%)',
+              backgroundSize: '200% 100%',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              animation: 'textGlow 3s ease-in-out infinite',
+            }}
+          >
+            Backed by SevenTrain Ventures
+          </p>
+          <style>{`
+            @keyframes textGlow {
+              0% { background-position: 100% 50%; }
+              100% { background-position: -100% 50%; }
+            }
+          `}</style>
         </div>
       </div>
     </section>

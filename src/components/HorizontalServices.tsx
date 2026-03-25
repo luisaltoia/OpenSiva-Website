@@ -1,6 +1,9 @@
-import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Cpu, Bot, Workflow } from "lucide-react";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const services = [
   {
@@ -9,6 +12,7 @@ const services = [
     headline: "Your expertise becomes a product.",
     body: "We build AI platforms that take what your team knows and deliver it at scale. Your knowledge becomes a subscription product that works around the clock.",
     icon: Cpu,
+    accent: "#6366f1",
   },
   {
     id: 2,
@@ -16,6 +20,7 @@ const services = [
     headline: "Systems that act, not just answer.",
     body: "We build AI agents that execute workflows, route decisions, and operate within your rules. Not chatbots. Operating systems for your business.",
     icon: Bot,
+    accent: "#10b981",
   },
   {
     id: 3,
@@ -23,242 +28,259 @@ const services = [
     headline: "Remove the manual. Keep the control.",
     body: "We automate business processes end to end. Data pipelines, approval workflows, reporting, integrations. What used to take a team now runs on infrastructure.",
     icon: Workflow,
+    accent: "#f59e0b",
   },
 ];
 
-const EXPANDED_WIDTH = 520;
-const COLLAPSED_WIDTH = 160;
-const GAP = 16;
+// intro (0) + 3 slides (1,2,3) = 4 states
+const TOTAL_STATES = 4;
+const VH_PER_STATE = 60;
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
-
-const getActiveIndex = (progress: number) => {
-  const cardProgress = clamp((progress - 0.16) / 0.84, 0, 1);
-  const segments = services.length - 1;
-  return Math.round(cardProgress * segments);
-};
-
-const ServiceCard = ({
-  service,
-  isActive,
-}: {
-  service: (typeof services)[0];
-  isActive: boolean;
-}) => {
-  const Icon = service.icon;
-
-  return (
-    <motion.article
-      className="flex-shrink-0 h-[50vh] min-h-[320px] max-h-[420px] rounded-2xl border border-background/10 bg-foreground text-background overflow-hidden"
-      animate={{ width: isActive ? EXPANDED_WIDTH : COLLAPSED_WIDTH }}
-      transition={{ type: "spring", stiffness: 400, damping: 35 }}
-    >
-      <div className="h-full flex flex-col overflow-hidden">
-        <div className="p-6 md:p-8 pb-0">
-          <Icon
-            className="text-background drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-            size={isActive ? 32 : 24}
-            strokeWidth={1.5}
-          />
-        </div>
-        <div className="mt-auto p-6 md:p-8 pt-0">
-          <span className="inline-block text-background/60 text-xs tracking-widest uppercase font-medium mb-3 whitespace-nowrap">
-            0{service.id}
-          </span>
-          <h3 className={`font-light text-architectural text-background ${isActive ? "text-2xl md:text-3xl" : "text-sm"}`}>
-            {service.label}
-          </h3>
-          {isActive && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
-              <p className="text-base font-light text-background/85 mb-2 mt-2">{service.headline}</p>
-              <p className="text-background/60 leading-relaxed text-sm">{service.body}</p>
-            </motion.div>
-          )}
-        </div>
-      </div>
-    </motion.article>
-  );
-};
+// Custom snap points: ONLY the first transition (intro → slide 1) requires MORE scrolling
+// Normal even distribution: [0, 0.333, 0.666, 1] - each gap is 0.333
+// Custom: first gap is 0.42, remaining two gaps stay equal at 0.29 each
+// This makes entering the first slide harder, but slide-to-slide transitions remain similar
+const SNAP_POINTS = [0, 0.42, 0.71, 1];
 
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLElement>(null);
-  const progress = useMotionValue(0);
-  const progressRef = useRef(0);
-  const [isLocked, setIsLocked] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [progress, setProgress] = useState(0);
 
-  const titleOpacity = useTransform(progress, [0, 0.08, 0.16], [1, 1, 0], { clamp: true });
-  const titleScale = useTransform(progress, [0, 0.16], [1, 0.97], { clamp: true });
-  const cardsOpacity = useTransform(progress, [0.05, 0.18], [0, 1], { clamp: true });
-
-  const setProgressValue = (next: number) => {
-    const clamped = clamp(next, 0, 1);
-    progressRef.current = clamped;
-    progress.set(clamped);
-    setActiveIndex(getActiveIndex(clamped));
-  };
-
-  // Lock when section reaches top of viewport
   useEffect(() => {
-    let previousTop: number | null = null;
+    if (!containerRef.current || !stickyRef.current) return;
 
-    const handleScroll = () => {
-      const el = containerRef.current;
-      if (!el) return;
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: containerRef.current,
+        start: "top top",
+        end: `+=${(TOTAL_STATES - 1) * window.innerHeight * (VH_PER_STATE / 100)}`,
+        pin: stickyRef.current,
+        scrub: 0.3,
+        snap: {
+          // Custom snap function using our weighted snap points
+          snapTo: (value) => {
+            // Find the closest snap point
+            let closest = SNAP_POINTS[0];
+            let minDist = Math.abs(value - closest);
+            for (const point of SNAP_POINTS) {
+              const dist = Math.abs(value - point);
+              if (dist < minDist) {
+                minDist = dist;
+                closest = point;
+              }
+            }
+            return closest;
+          },
+          duration: { min: 0.15, max: 0.3 },
+          ease: "power2.inOut",
+        },
+        onUpdate: (self) => {
+          const p = self.progress;
+          setProgress(p);
+          // Determine state based on custom snap points
+          // Find which segment we're in based on midpoints
+          let state = 0;
+          for (let i = 1; i < SNAP_POINTS.length; i++) {
+            const midpoint = (SNAP_POINTS[i - 1] + SNAP_POINTS[i]) / 2;
+            if (p >= midpoint) {
+              state = i;
+            }
+          }
+          setActiveIndex(state === 0 ? -1 : state - 1);
+        },
+      });
+    }, containerRef);
 
-      const rect = el.getBoundingClientRect();
-      const currentTop = rect.top;
+    return () => ctx.revert();
+  }, []);
 
-      if (isLocked) return;
-
-      const isNearTop = currentTop <= 50 && currentTop >= -50;
-
-      if (isNearTop) {
-        const crossedFromAbove = previousTop !== null && previousTop > 50 && currentTop <= 50;
-        const crossedFromBelow = previousTop !== null && previousTop < -50 && currentTop >= -50;
-
-        if (crossedFromAbove || crossedFromBelow || previousTop === null) {
-          console.log("🔒 LOCKING - Section reached top", { currentTop, previousTop });
-          setIsLocked(true);
-          setProgressValue(0);
-        }
-      }
-
-      previousTop = currentTop;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isLocked]);
-
-  // Handle scroll while locked
-  useEffect(() => {
-    console.log("🎯 Wheel handler effect running, isLocked:", isLocked);
-    
-    if (!isLocked) return;
-    
-    console.log("✅ Lock is active, installing wheel handler");
-
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    let accumulatedDelta = 0;
-    let cooldownUntil = 0;
-    const THRESHOLD = 50;
-    const COOLDOWN_MS = 400;
-
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      
-      const now = performance.now();
-      
-      if (now < cooldownUntil) {
-        console.log("⏳ In cooldown, ignoring input");
-        return;
-      }
-      
-      accumulatedDelta += e.deltaY;
-      console.log("🔄 Accumulated delta:", accumulatedDelta);
-
-      if (Math.abs(accumulatedDelta) >= THRESHOLD) {
-        const direction = Math.sign(accumulatedDelta);
-        accumulatedDelta = 0;
-        cooldownUntil = now + COOLDOWN_MS;
-        
-        console.log("✅ Threshold crossed, direction:", direction, "| Cooldown until:", COOLDOWN_MS + "ms");
-
-        // UNLOCK: At headline scrolling up
-        if (progressRef.current <= 0.16 && direction < 0) {
-          console.log("🔓 Unlocking upward");
-          setIsLocked(false);
-          setProgressValue(0);
-          document.body.style.overflow = prevOverflow;
-          setTimeout(() => {
-            window.scrollBy({ top: -window.innerHeight * 0.5, behavior: "smooth" });
-          }, 50);
-          return;
-        }
-
-        // UNLOCK: At last slide scrolling down
-        if (progressRef.current >= 1 && direction > 0) {
-          console.log("🔓 Unlocking downward");
-          setIsLocked(false);
-          document.body.style.overflow = prevOverflow;
-          setTimeout(() => {
-            window.scrollBy({ top: window.innerHeight, behavior: "smooth" });
-          }, 50);
-          return;
-        }
-
-        // HEADLINE → FIRST SLIDE
-        if (progressRef.current < 0.16 && direction > 0) {
-          console.log("📍 Headline → First slide");
-          setProgressValue(0.16);
-          return;
-        }
-
-        // FIRST SLIDE → HEADLINE
-        if (progressRef.current <= 0.16 && direction < 0) {
-          console.log("📍 First slide → Headline");
-          setProgressValue(0);
-          return;
-        }
-
-        // NORMAL SLIDE NAVIGATION
-        const currentIndex = getActiveIndex(progressRef.current);
-        const targetIndex = clamp(currentIndex + direction, 0, services.length - 1);
-
-        const segments = services.length - 1;
-        const targetProgress = targetIndex / segments;
-        const finalProgress = clamp(targetProgress * 0.84 + 0.16, 0, 1);
-
-        console.log("📍 Slide change:", currentIndex, "→", targetIndex);
-        setProgressValue(finalProgress);
-      }
-    };
-
-    window.addEventListener("wheel", onWheel, { passive: false });
-
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("wheel", onWheel);
-    };
-  }, [isLocked]);
+  // Adjusted for custom snap points - first snap is at 0.42, so intro fades later
+  const introOpacity = progress <= 0.15 ? 1 : progress >= 0.35 ? 0 : 1 - (progress - 0.15) / 0.2;
+  const slidesOpacity = progress <= 0.15 ? 0 : progress >= 0.4 ? 1 : (progress - 0.15) / 0.25;
 
   return (
     <section
       ref={containerRef}
-      className="relative z-40 min-h-screen bg-background"
-      style={{ scrollSnapAlign: "start" }}
+      className="relative z-40 bg-background"
+      style={{ height: `${TOTAL_STATES * VH_PER_STATE}vh` }}
+      data-lenis-prevent
     >
-      <div className="relative z-40 h-screen overflow-hidden bg-background">
-        <motion.div
+      <div ref={stickyRef} className="h-screen overflow-hidden bg-background">
+
+        {/* Intro Title */}
+        <div
           className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none"
-          style={{ opacity: titleOpacity, scale: titleScale }}
+          style={{
+            opacity: Math.max(0, introOpacity),
+            transform: `scale(${1 - progress * 0.05})`,
+          }}
         >
           <h2 className="text-4xl md:text-6xl font-light text-architectural text-center text-foreground">
             Three ways to stop being the bottleneck.
           </h2>
-        </motion.div>
+        </div>
 
-        <motion.div className="absolute inset-0 flex items-center justify-center" style={{ opacity: cardsOpacity }}>
-          <div className="flex" style={{ gap: GAP }}>
-            {services.map((service, i) => (
-              <ServiceCard
+        {/* Full-screen slides */}
+        <div
+          className="absolute inset-0"
+          style={{ opacity: Math.max(0, Math.min(1, slidesOpacity)) }}
+        >
+          {services.map((service, i) => {
+            const Icon = service.icon;
+            const isActive = i === activeIndex;
+            const isPast = i < activeIndex;
+            const isFuture = i > activeIndex;
+
+            return (
+              <div
                 key={service.id}
-                service={service}
-                isActive={i === activeIndex}
-              />
+                className="absolute inset-0 flex items-center justify-center transition-all duration-700"
+                style={{
+                  opacity: isActive ? 1 : 0,
+                  transform: isPast
+                    ? 'translateY(-100%)'
+                    : isFuture
+                      ? 'translateY(100%)'
+                      : 'translateY(0)',
+                  transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                  pointerEvents: isActive ? 'auto' : 'none',
+                }}
+              >
+                {/* Background gradient */}
+                <div
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    background: `radial-gradient(ellipse at 30% 50%, ${service.accent}40 0%, transparent 60%)`,
+                  }}
+                />
+
+                {/* Giant background number */}
+                <div className="absolute inset-0 flex items-center justify-end pr-[5%] pointer-events-none overflow-hidden">
+                  <span
+                    className="font-bold select-none"
+                    style={{
+                      fontSize: 'clamp(25rem, 55vw, 50rem)',
+                      lineHeight: 0.8,
+                      color: `${service.accent}08`,
+                    }}
+                  >
+                    {String(service.id).padStart(2, '0')}
+                  </span>
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10 container mx-auto px-6 md:px-12 flex items-center">
+                  <div className="max-w-2xl">
+                    {/* Label with icon */}
+                    <div className="flex items-center gap-4 mb-6">
+                      <div
+                        className="p-3 rounded-xl"
+                        style={{ background: `${service.accent}20` }}
+                      >
+                        <Icon
+                          style={{ color: service.accent }}
+                          size={24}
+                          strokeWidth={1.5}
+                        />
+                      </div>
+                      <span
+                        className="text-xs tracking-widest uppercase font-medium"
+                        style={{ color: service.accent }}
+                      >
+                        {service.label}
+                      </span>
+                    </div>
+
+                    {/* Headline */}
+                    <h3
+                      className="text-4xl md:text-6xl lg:text-7xl font-light text-foreground mb-6"
+                      style={{
+                        opacity: isActive ? 1 : 0,
+                        transform: isActive ? 'translateY(0)' : 'translateY(30px)',
+                        transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                        transitionDelay: isActive ? '0.1s' : '0s',
+                      }}
+                    >
+                      {service.headline}
+                    </h3>
+
+                    {/* Body */}
+                    <p
+                      className="text-lg md:text-xl text-foreground/60 leading-relaxed max-w-lg"
+                      style={{
+                        opacity: isActive ? 1 : 0,
+                        transform: isActive ? 'translateY(0)' : 'translateY(30px)',
+                        transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                        transitionDelay: isActive ? '0.2s' : '0s',
+                      }}
+                    >
+                      {service.body}
+                    </p>
+
+                    {/* Accent line */}
+                    <div
+                      className="mt-8 h-[2px] rounded-full transition-all duration-700"
+                      style={{
+                        width: isActive ? '80px' : '0px',
+                        background: service.accent,
+                        transitionDelay: isActive ? '0.3s' : '0s',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Slide number - bottom left */}
+                <div className="absolute bottom-8 left-6 md:left-12 flex items-center gap-4">
+                  <span className="text-5xl md:text-6xl font-light" style={{ color: service.accent }}>
+                    {String(service.id).padStart(2, '0')}
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-foreground/40 tracking-widest uppercase">Service</span>
+                    <span className="text-sm text-foreground/60">{service.id} of {services.length}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Progress dots - right side */}
+          <div className="absolute right-6 md:right-12 top-1/2 -translate-y-1/2 flex flex-col gap-3">
+            {services.map((service, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3"
+              >
+                <span
+                  className="text-[10px] tracking-widest uppercase transition-all duration-500"
+                  style={{
+                    opacity: i === activeIndex ? 1 : 0.3,
+                    color: i === activeIndex ? service.accent : 'currentColor',
+                  }}
+                >
+                  {service.label}
+                </span>
+                <div
+                  className="w-8 h-[2px] rounded-full transition-all duration-500"
+                  style={{
+                    background: i === activeIndex ? service.accent : 'rgba(255,255,255,0.2)',
+                    transform: i === activeIndex ? 'scaleX(1.5)' : 'scaleX(1)',
+                  }}
+                />
+              </div>
             ))}
           </div>
-        </motion.div>
+
+          {/* Scroll hint */}
+          <div
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 transition-opacity duration-500"
+            style={{ opacity: activeIndex < services.length - 1 ? 0.4 : 0 }}
+          >
+            <span className="text-[10px] tracking-widest uppercase text-foreground/40">Scroll</span>
+            <div className="w-px h-6 bg-gradient-to-b from-foreground/20 to-transparent" />
+          </div>
+        </div>
       </div>
     </section>
   );

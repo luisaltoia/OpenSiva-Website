@@ -199,4 +199,14 @@
       filter: drop-shadow(0 0 7px hsla(0, 0%, 100%, 0.36)) drop-shadow(0 0 18px hsla(0, 0%, 100%, 0.18)) drop-shadow(0 0 30px hsla(0, 0%, 100%, 0.06));
     }
   }
+
+  /* Fade in animation for card content */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }

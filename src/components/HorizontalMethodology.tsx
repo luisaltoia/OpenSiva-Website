@@ -1,5 +1,8 @@
-import { useRef, useState, useEffect, useCallback } from "react";
-import { ReactLenis, useLenis } from "lenis/react";
+import { useRef, useState, useEffect } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const stages = [
   {
@@ -40,259 +43,220 @@ const stages = [
   },
 ];
 
-function SliderContent() {
+// intro (0) + 6 stages = 7 states
+const TOTAL_STATES = 7;
+const VH_PER_STATE = 55; // scroll distance per state
+
+const HorizontalMethodology = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const [displayIndex, setDisplayIndex] = useState(-1); // -1 = intro
   const [progress, setProgress] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const scrollAccumulatorRef = useRef(0);
-  const hasEnteredRef = useRef(false);
   const slideCount = stages.length;
-  const SCROLL_THRESHOLD = 50;
 
-  const lenis = useLenis();
-
-  const getSlideScrollPosition = useCallback(
-    (slideIndex: number) => {
-      if (!containerRef.current) return 0;
-      const container = containerRef.current;
-      const sectionTop = container.offsetTop;
-      const scrollableDistance = container.offsetHeight - window.innerHeight;
-      return sectionTop + scrollableDistance * (slideIndex / (slideCount - 1));
-    },
-    [slideCount]
-  );
-
-  const snapToSlide = useCallback(
-    (slideIndex: number) => {
-      if (slideIndex < 0 || slideIndex >= slideCount || isAnimating || !lenis)
-        return;
-      setCurrentSlide(slideIndex);
-      setIsAnimating(true);
-      scrollAccumulatorRef.current = 0;
-      lenis.scrollTo(getSlideScrollPosition(slideIndex), {
-        duration: 0.5,
-        easing: (t: number) => 1 - Math.pow(1 - t, 3),
-        lock: true,
-        onComplete: () => setIsAnimating(false),
-      });
-    },
-    [slideCount, isAnimating, lenis, getSlideScrollPosition]
-  );
-
-  // Decay accumulator
   useEffect(() => {
-    const interval = setInterval(() => {
-      scrollAccumulatorRef.current *= 0.92;
-      if (Math.abs(scrollAccumulatorRef.current) < 1)
-        scrollAccumulatorRef.current = 0;
-    }, 16);
-    return () => clearInterval(interval);
+    if (!containerRef.current || !stickyRef.current) return;
+
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: containerRef.current,
+        start: "top top",
+        end: `+=${(TOTAL_STATES - 1) * window.innerHeight * (VH_PER_STATE / 100)}`,
+        pin: stickyRef.current,
+        scrub: 0.3,
+        snap: {
+          snapTo: 1 / (TOTAL_STATES - 1),
+          duration: { min: 0.15, max: 0.3 },
+          ease: "power2.inOut",
+        },
+        onUpdate: (self) => {
+          const p = self.progress;
+          setProgress(p);
+          const state = Math.round(p * (TOTAL_STATES - 1));
+          setDisplayIndex(state === 0 ? -1 : state - 1);
+        },
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
   }, []);
 
-  // Track scroll progress
-  useLenis((l) => {
-    if (!containerRef.current) return;
-    const scroll = l.scroll;
-    const container = containerRef.current;
-    const sectionTop = container.offsetTop;
-    const scrollableDistance = container.offsetHeight - window.innerHeight;
-    const newProgress = Math.max(
-      0,
-      Math.min(1, (scroll - sectionTop) / scrollableDistance)
-    );
-    setProgress(newProgress);
+  const introOpacity = progress <= 0.05 ? 1 : progress >= 0.15 ? 0 : 1 - (progress - 0.05) / 0.1;
+  const slidesOpacity = progress <= 0.08 ? 0 : progress >= 0.18 ? 1 : (progress - 0.08) / 0.1;
 
-    if (
-      !hasEnteredRef.current &&
-      scroll >= sectionTop - 50 &&
-      scroll < sectionTop + 200
-    ) {
-      hasEnteredRef.current = true;
-      snapToSlide(0);
-    }
-
-    if (scroll < sectionTop - window.innerHeight) {
-      hasEnteredRef.current = false;
-      setCurrentSlide(0);
-      setIsAnimating(false);
-      scrollAccumulatorRef.current = 0;
-    }
-  });
-
-  // Virtual scroll handler for snap behavior
-  useEffect(() => {
-    if (!lenis) return;
-
-    const handleVirtualScroll = (e: any) => {
-      if (!containerRef.current) return;
-      const scroll = lenis.scroll;
-      const container = containerRef.current;
-      const sectionTop = container.offsetTop;
-      const sectionBottom =
-        sectionTop + container.offsetHeight - window.innerHeight;
-
-      if (scroll >= sectionTop - 50 && scroll <= sectionBottom + 50) {
-        e.preventDefault();
-        if (!isAnimating) {
-          scrollAccumulatorRef.current += e.deltaY;
-          if (scrollAccumulatorRef.current > SCROLL_THRESHOLD)
-            snapToSlide(currentSlide + 1);
-          else if (scrollAccumulatorRef.current < -SCROLL_THRESHOLD)
-            snapToSlide(currentSlide - 1);
-        }
-      }
-    };
-
-    lenis.on("virtual-scroll", handleVirtualScroll);
-    return () => lenis.off("virtual-scroll", handleVirtualScroll);
-  }, [lenis, isAnimating, currentSlide, snapToSlide]);
-
-  const translateX = progress * (slideCount - 1) * -100;
-  const displayIndex = Math.min(
-    Math.round(progress * (slideCount - 1)),
-    slideCount - 1
-  );
+  // Container needs: scroll distance + one screen height for the pinned element
+  const scrollDistance = (TOTAL_STATES - 1) * VH_PER_STATE;
+  const containerHeight = scrollDistance + 100; // +100vh for the pinned screen
 
   return (
     <div
       ref={containerRef}
       className="relative"
-      style={{ height: `${slideCount * 100}vh` }}
+      style={{ height: `${containerHeight}vh` }}
+      data-lenis-prevent
     >
-      <div className="sticky top-0 h-screen w-full overflow-hidden bg-foreground">
-        {/* Header: counter + progress + stage names */}
-        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 pt-8 md:px-12">
-          {/* Counter */}
-          <div className="text-xs font-light tracking-widest text-background/40">
-            <span className="text-background font-medium text-base">
-              {String(displayIndex + 1).padStart(2, "0")}
-            </span>
-            <span> / {String(slideCount).padStart(2, "0")}</span>
+      <div
+        ref={stickyRef}
+        className="h-screen w-full overflow-hidden bg-foreground"
+      >
+        {/* Intro Title */}
+        <div
+          className="absolute inset-0 flex items-center justify-center px-6 pointer-events-none z-10"
+          style={{
+            opacity: Math.max(0, introOpacity),
+            transform: `scale(${1 - progress * 0.05})`,
+          }}
+        >
+          <div className="text-center">
+            <p className="text-xs text-background/40 uppercase tracking-[0.3em] mb-4">
+              Our Process
+            </p>
+            <h2 className="text-4xl md:text-6xl font-light text-architectural text-background">
+              From diagnosis to deployment.
+            </h2>
           </div>
+        </div>
 
-          {/* Progress line */}
-          <div className="flex-1 max-w-[200px] mx-8">
-            <div className="h-px bg-background/15 relative overflow-hidden">
-              <div
-                className="absolute top-0 left-0 h-full bg-background transition-[width] duration-150 ease-out"
-                style={{ width: `${progress * 100}%` }}
-              >
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-background rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
+        {/* Slides section */}
+        <div
+          className="absolute inset-0"
+          style={{ opacity: Math.max(0, Math.min(1, slidesOpacity)) }}
+        >
+          {/* Header: counter + progress + stage names */}
+          <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 pt-8 md:px-12">
+            {/* Counter */}
+            <div className="text-xs font-light tracking-widest text-background/40">
+              <span className="text-background font-medium text-base">
+                {String(Math.max(1, displayIndex + 1)).padStart(2, "0")}
+              </span>
+              <span> / {String(slideCount).padStart(2, "0")}</span>
+            </div>
+
+            {/* Progress line */}
+            <div className="flex-1 max-w-[200px] mx-8">
+              <div className="h-px bg-background/15 relative overflow-hidden">
+                <div
+                  className="absolute top-0 left-0 h-full bg-background transition-[width] duration-150 ease-out"
+                  style={{ width: `${Math.max(0, (displayIndex + 1) / slideCount) * 100}%` }}
+                >
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-background rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
+                </div>
               </div>
+            </div>
+
+            {/* Stage names */}
+            <div className="hidden md:flex gap-6 text-[0.7rem] uppercase tracking-[0.15em]">
+              {stages.map((s, i) => (
+                <span
+                  key={s.num}
+                  className="transition-colors duration-300"
+                  style={{
+                    color:
+                      i === displayIndex
+                        ? "hsl(var(--background))"
+                        : "hsl(var(--background) / 0.3)",
+                  }}
+                >
+                  {s.name}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* Stage names */}
-          <div className="hidden md:flex gap-6 text-[0.7rem] uppercase tracking-[0.15em]">
-            {stages.map((s, i) => (
-              <span
-                key={s.num}
-                className="transition-colors duration-300"
+          {/* Slides */}
+          {stages.map((stage, index) => {
+            const isActive = index === displayIndex;
+            const isPast = index < displayIndex;
+            const isFuture = index > displayIndex;
+
+            return (
+              <div
+                key={stage.num}
+                className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center transition-all duration-700"
                 style={{
-                  color:
-                    i === displayIndex
-                      ? "hsl(var(--background))"
-                      : "hsl(var(--background) / 0.3)",
+                  opacity: isActive ? 1 : 0,
+                  transform: isPast
+                    ? 'translateX(-100%)'
+                    : isFuture
+                      ? 'translateX(100%)'
+                      : 'translateX(0)',
+                  transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                  pointerEvents: isActive ? 'auto' : 'none',
                 }}
               >
-                {s.name}
-              </span>
+                {/* Giant background number */}
+                <span
+                  className="absolute font-bold text-background/[0.03] select-none leading-none"
+                  style={{
+                    fontSize: "clamp(15rem, 40vw, 30rem)",
+                  }}
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+
+                {/* Content */}
+                <div
+                  className="relative z-10 max-w-[700px]"
+                  style={{
+                    opacity: isActive ? 1 : 0,
+                    transform: isActive ? 'translateY(0)' : 'translateY(40px)',
+                    transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                    transitionDelay: isActive ? '0.1s' : '0s',
+                  }}
+                >
+                  <p className="text-xs text-background/50 uppercase tracking-[0.2em] mb-4 font-light">
+                    Stage {stage.num}
+                  </p>
+                  <h2
+                    className="font-light text-architectural text-background mb-0"
+                    style={{
+                      fontSize: "clamp(2.5rem, 8vw, 5rem)",
+                      letterSpacing: "-0.03em",
+                    }}
+                  >
+                    {stage.name}
+                  </h2>
+                  {/* Color accent line */}
+                  <div
+                    className="mx-auto mt-6 mb-6 h-px w-[60px] transition-all duration-700"
+                    style={{
+                      background: stage.color,
+                      transform: isActive ? 'scaleX(1)' : 'scaleX(0)',
+                      transitionDelay: isActive ? '0.2s' : '0s',
+                    }}
+                  />
+                  <p className="text-background/60 leading-relaxed text-sm md:text-base max-w-[520px] mx-auto">
+                    {stage.body}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Bottom progress dots */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-50">
+            {stages.map((stage, i) => (
+              <div
+                key={stage.num}
+                className="w-10 h-px relative overflow-hidden"
+                style={{ background: "hsl(var(--background) / 0.2)" }}
+              >
+                <div
+                  className="absolute left-0 top-0 h-full transition-[width] duration-400 ease-out"
+                  style={{
+                    width: i <= displayIndex ? "100%" : "0%",
+                    background:
+                      i === displayIndex
+                        ? stage.color
+                        : "hsl(var(--background) / 0.5)",
+                  }}
+                />
+              </div>
             ))}
           </div>
         </div>
-
-        {/* Slides */}
-        <div
-          className="flex h-full transition-transform duration-100 ease-out"
-          style={{ transform: `translateX(${translateX}vw)` }}
-        >
-          {stages.map((stage, index) => (
-            <div
-              key={stage.num}
-              className="min-w-[100vw] h-full flex flex-col items-center justify-center p-8 text-center relative"
-            >
-              {/* Giant background number */}
-              <span
-                className="absolute font-bold text-background/[0.03] select-none leading-none"
-                style={{
-                  fontSize: "clamp(15rem, 40vw, 30rem)",
-                }}
-              >
-                {String(index + 1).padStart(2, "0")}
-              </span>
-
-              {/* Content */}
-              <div
-                className="relative z-10 max-w-[700px] transition-all duration-700"
-                style={{
-                  transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
-                  opacity: index === displayIndex ? 1 : 0,
-                  transform: `translateY(${index === displayIndex ? 0 : 40}px)`,
-                }}
-              >
-                <p className="text-xs text-background/50 uppercase tracking-[0.2em] mb-4 font-light">
-                  Stage {stage.num}
-                </p>
-                <h2
-                  className="font-light text-architectural text-background mb-0"
-                  style={{
-                    fontSize: "clamp(2.5rem, 8vw, 5rem)",
-                    letterSpacing: "-0.03em",
-                  }}
-                >
-                  {stage.name}
-                </h2>
-                {/* Color accent line */}
-                <div
-                  className="mx-auto mt-6 mb-6 h-px w-[60px] transition-transform duration-500"
-                  style={{
-                    background: stage.color,
-                    transitionTimingFunction:
-                      "cubic-bezier(0.16, 1, 0.3, 1)",
-                    transitionDelay: "0.3s",
-                    transform: `scaleX(${index === displayIndex ? 1 : 0})`,
-                  }}
-                />
-                <p className="text-background/60 leading-relaxed text-sm md:text-base max-w-[520px] mx-auto">
-                  {stage.body}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom progress dots */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-          {stages.map((stage, i) => (
-            <div
-              key={stage.num}
-              className="w-10 h-px relative overflow-hidden"
-              style={{ background: "hsl(var(--background) / 0.2)" }}
-            >
-              <div
-                className="absolute left-0 top-0 h-full transition-[width] duration-400 ease-out"
-                style={{
-                  width: i <= displayIndex ? "100%" : "0%",
-                  background:
-                    i === displayIndex
-                      ? stage.color
-                      : "hsl(var(--background) / 0.5)",
-                }}
-              />
-            </div>
-          ))}
-        </div>
       </div>
     </div>
-  );
-}
-
-const HorizontalMethodology = () => {
-  return (
-    <ReactLenis root options={{ lerp: 0.07, smoothWheel: true }}>
-      <SliderContent />
-    </ReactLenis>
   );
 };
 
