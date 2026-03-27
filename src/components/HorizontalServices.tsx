@@ -245,8 +245,8 @@ const HorizontalServices = () => {
             );
           })}
 
-          {/* Progress dots - right side (hidden on mobile) */}
-          <div className="absolute right-6 md:right-12 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-3">
+          {/* Progress dots - right side (hidden on mobile/tablet) */}
+          <div className="absolute right-12 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3">
             {services.map((service, i) => (
               <div
                 key={i}
