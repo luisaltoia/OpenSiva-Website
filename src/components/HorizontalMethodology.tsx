@@ -63,12 +63,9 @@ const HorizontalMethodology = () => {
         start: "top top",
         end: `+=${(TOTAL_STATES - 1) * window.innerHeight * (VH_PER_STATE / 100)}`,
         pin: stickyRef.current,
-        scrub: 0.3,
-        snap: {
-          snapTo: 1 / (TOTAL_STATES - 1),
-          duration: { min: 0.15, max: 0.3 },
-          ease: "power2.inOut",
-        },
+        pinSpacing: true,
+        anticipatePin: 1,
+        scrub: 1,
         onUpdate: (self) => {
           const p = self.progress;
           setProgress(p);
@@ -91,9 +88,8 @@ const HorizontalMethodology = () => {
   return (
     <div
       ref={containerRef}
-      className="relative"
+      className="relative bg-foreground"
       style={{ height: `${containerHeight}vh` }}
-      data-lenis-prevent
     >
       <div
         ref={stickyRef}

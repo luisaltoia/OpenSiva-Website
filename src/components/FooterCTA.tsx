@@ -46,22 +46,32 @@ const FooterCTA = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const subject = encodeURIComponent(`Contact Request from ${formData.name}`);
-    const body = encodeURIComponent(
-      `Name: ${formData.name}\n` +
-      `Email: ${formData.email}\n` +
-      `Phone: ${formData.phone}\n` +
-      `Company Size: ${formData.companySize}\n` +
-      `Industry: ${formData.industry}\n\n` +
-      `Summary:\n${formData.summary}`
-    );
+    try {
+      const response = await fetch("https://formspree.io/f/mwvwvvlj", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          companySize: formData.companySize,
+          industry: formData.industry,
+          message: formData.summary,
+        }),
+      });
 
-    window.location.href = `mailto:v@seventrainventures.com?subject=${subject}&body=${body}`;
-
-    setTimeout(() => {
+      if (response.ok) {
+        setSubmitted(true);
+      } else {
+        alert("Something went wrong. Please try again or email us directly.");
+      }
+    } catch (error) {
+      alert("Something went wrong. Please try again or email us directly.");
+    } finally {
       setIsSubmitting(false);
-      setSubmitted(true);
-    }, 1000);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -239,13 +249,7 @@ const FooterCTA = () => {
             <div className="text-4xl mb-4">✓</div>
             <h3 className="text-2xl font-light text-white mb-2">Thank you!</h3>
             <p className="text-white/60">
-              Your email client should have opened. If not, please email us directly at{" "}
-              <a
-                href="mailto:v@seventrainventures.com"
-                className="text-white underline"
-              >
-                v@seventrainventures.com
-              </a>
+              We've received your message and will get back to you soon.
             </p>
           </div>
         )}
@@ -254,10 +258,10 @@ const FooterCTA = () => {
         <div className="text-center mt-12">
           <p className="text-sm text-white/40 mb-2">Or email us directly</p>
           <a
-            href="mailto:v@seventrainventures.com"
+            href="mailto:luis.r@seventrainventures.com"
             className="text-white hover:text-white/80 transition-colors duration-300"
           >
-            v@seventrainventures.com
+            luis.r@seventrainventures.com
           </a>
         </div>
       </div>

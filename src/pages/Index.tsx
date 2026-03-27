@@ -31,8 +31,8 @@ const Index = () => {
 
   // Trigger color change when section is centered
   useMotionValueEvent(lineP, "change", (latest) => {
-    // Flip to dark when text is centered (progress >= 0.95 means centered)
-    setIsDark(latest >= 0.95);
+    // Flip to dark earlier for seamless transition (progress >= 0.7)
+    setIsDark(latest >= 0.7);
   });
 
   // Text animations still scroll-based
@@ -98,12 +98,12 @@ const Index = () => {
       </motion.section>
 
       {/* ═══ HOW WE BUILD ═══ */}
-      <div id="process">
+      <div id="process" className="bg-foreground">
         <HorizontalMethodology />
       </div>
 
       {/* ═══ FOOTER CTA ═══ */}
-      <div id="contact" className="relative z-20">
+      <div id="contact" className="relative z-20 bg-black">
         <FooterCTA />
       </div>
     </div>

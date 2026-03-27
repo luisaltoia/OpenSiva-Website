@@ -36,12 +36,6 @@ const services = [
 const TOTAL_STATES = 4;
 const VH_PER_STATE = 60;
 
-// Custom snap points: ONLY the first transition (intro → slide 1) requires MORE scrolling
-// Normal even distribution: [0, 0.333, 0.666, 1] - each gap is 0.333
-// Custom: first gap is 0.42, remaining two gaps stay equal at 0.29 each
-// This makes entering the first slide harder, but slide-to-slide transitions remain similar
-const SNAP_POINTS = [0, 0.42, 0.71, 1];
-
 const HorizontalServices = () => {
   const containerRef = useRef<HTMLElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
@@ -57,37 +51,14 @@ const HorizontalServices = () => {
         start: "top top",
         end: `+=${(TOTAL_STATES - 1) * window.innerHeight * (VH_PER_STATE / 100)}`,
         pin: stickyRef.current,
-        scrub: 0.3,
-        snap: {
-          // Custom snap function using our weighted snap points
-          snapTo: (value) => {
-            // Find the closest snap point
-            let closest = SNAP_POINTS[0];
-            let minDist = Math.abs(value - closest);
-            for (const point of SNAP_POINTS) {
-              const dist = Math.abs(value - point);
-              if (dist < minDist) {
-                minDist = dist;
-                closest = point;
-              }
-            }
-            return closest;
-          },
-          duration: { min: 0.15, max: 0.3 },
-          ease: "power2.inOut",
-        },
+        pinSpacing: true,
+        anticipatePin: 1,
+        scrub: 1,
         onUpdate: (self) => {
           const p = self.progress;
           setProgress(p);
-          // Determine state based on custom snap points
-          // Find which segment we're in based on midpoints
-          let state = 0;
-          for (let i = 1; i < SNAP_POINTS.length; i++) {
-            const midpoint = (SNAP_POINTS[i - 1] + SNAP_POINTS[i]) / 2;
-            if (p >= midpoint) {
-              state = i;
-            }
-          }
+          // Determine state based on even distribution
+          const state = Math.round(p * (TOTAL_STATES - 1));
           setActiveIndex(state === 0 ? -1 : state - 1);
         },
       });
@@ -96,16 +67,15 @@ const HorizontalServices = () => {
     return () => ctx.revert();
   }, []);
 
-  // Adjusted for custom snap points - first snap is at 0.42, so intro fades later
-  const introOpacity = progress <= 0.15 ? 1 : progress >= 0.35 ? 0 : 1 - (progress - 0.15) / 0.2;
-  const slidesOpacity = progress <= 0.15 ? 0 : progress >= 0.4 ? 1 : (progress - 0.15) / 0.25;
+  // Smooth opacity transitions
+  const introOpacity = progress <= 0.05 ? 1 : progress >= 0.2 ? 0 : 1 - (progress - 0.05) / 0.15;
+  const slidesOpacity = progress <= 0.1 ? 0 : progress >= 0.25 ? 1 : (progress - 0.1) / 0.15;
 
   return (
     <section
       ref={containerRef}
       className="relative z-40 bg-background"
       style={{ height: `${TOTAL_STATES * VH_PER_STATE}vh` }}
-      data-lenis-prevent
     >
       <div ref={stickyRef} className="h-screen overflow-hidden bg-background">
 
